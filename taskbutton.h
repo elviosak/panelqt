@@ -5,24 +5,20 @@
 
 class PanelQt;
 class TaskBar;
+class TaskGroup;
 
-class LeftAlignedTextStyle : public QProxyStyle
-{
-    using QProxyStyle::QProxyStyle;
-public:
-    virtual void drawItemText(QPainter * painter, const QRect & rect, int flags
-            , const QPalette & pal, bool enabled, const QString & text
-            , QPalette::ColorRole textRole = QPalette::NoRole) const override;
+enum TilePosition{
+    Left,
+    Center,
+    Right
 };
-
 
 class TaskButton : public QToolButton
 {
     Q_OBJECT
-
+    Q_ENUM(TilePosition)
 public:
-    TaskButton(QIcon icon, QString className, PanelQt * panel, bool pinned);
-    TaskButton(WId id, QIcon icon, QString title, QString className, QActionGroup * actionGroup, TaskBar * taskbar, PanelQt * panel);
+    TaskButton(WId id, QIcon icon, QString title, QString className, QActionGroup * actionGroup, TaskGroup * group, TaskBar * taskbar, PanelQt * panel);
     ~TaskButton();
 
     QString mClass;
@@ -30,20 +26,32 @@ public:
     void setTitle(QString title);
     void setActionCheck(bool check);
     void buttonWidthChanged(int w);
-private:
+
+
     WId mId;
     QIcon mIcon;
     QString mTitle;
 
+    TaskGroup * mGroup;
+    TaskBar * mTaskBar;
     PanelQt * mPanel;
-    TaskBar * mTaskbar;
+
     QMenu * mMenu;
     QAction * mAction;
+
+    void updateAutoRaise(bool autoRaise);
+    void updateIconSize(int height);
+    void changeIcon(QIcon icon);
+
+    void dragEnterEvent(QDragEnterEvent *e) override;
+    void tileWindow(TilePosition pos, int perc);
+    void moveApplicationToPrevNextMonitor(bool next);
+private:
     void updateMenu();
     void requestClose();
     void actionClicked(bool checked);
+    void contextMenuEvent(QContextMenuEvent *event) override;
 
-    void contextMenuEvent(QContextMenuEvent *event);
 
 signals:
     void triggered();

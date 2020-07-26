@@ -1,39 +1,57 @@
-QT       += bluetooth core gui widgets x11extras
-QT += KWindowSystem
-
-#LIBS += -lX11
-
+QT  += core gui widgets x11extras dbus
+QT  += KWindowSystem
 
 CONFIG += c++11
 
-# The following define makes your compiler emit warnings if you use
-# any Qt feature that has been marked deprecated (the exact warnings
-# depend on your compiler). Please consult the documentation of the
-# deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
+    appmenu.cpp \
     clock.cpp \
+    sn/dbustypes.cpp \
     main.cpp \
     panelqt.cpp \
     pinbutton.cpp \
+    snbutton.cpp \
+    snframe.cpp \
+    sn/sniasync.cpp \
+    sn/statusnotifieriteminterface.cpp \
+    sn/statusnotifierwatcher.cpp \
     taskbar.cpp \
-    taskbutton.cpp
+    taskbutton.cpp \
+    taskgroup.cpp
 
 HEADERS += \
+    appmenu.h \
     clock.h \
+    sn/dbustypes.h \
+    extras.h \
     panelqt.h \
     pinbutton.h \
+    snbutton.h \
+    snframe.h \
+    sn/sniasync.h \
+    sn/statusnotifieriteminterface.h \
+    sn/statusnotifierwatcher.h \
     taskbar.h \
-    taskbutton.h
+    taskbutton.h \
+    taskgroup.h \
+    toolbuttontextstyle.hpp
 
-#FORMS += \
-#    panelqt.ui
+#LIBS += -L/usr/lib -ldbusmenu-qt5
+unix: CONFIG += link_pkgconfig
+unix: PKGCONFIG += dbusmenu-qt5
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    statusnotifier-extra/org.kde.StatusNotifierItem.xml
+
+RESOURCES += \
+    panelqt.qrc
 
 
 

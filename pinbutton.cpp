@@ -1,34 +1,51 @@
 #include "pinbutton.h"
+#include "taskgroup.h"
 #include "taskbar.h"
 #include "panelqt.h"
 
-
 //pinned button icon
 PinButton::~PinButton(){}
-PinButton::PinButton(QIcon icon, QString className, PanelQt * panel):
-    QToolButton(panel),
-    mClass(className),
+PinButton::PinButton(QIcon icon, QString className, TaskGroup * group, TaskBar * taskbar, PanelQt * panel):
+    QToolButton(group),
     mIcon(icon),
+    mClassName(className),
+    mGroup(group),
+    mTaskBar(taskbar),
     mPanel(panel),
     mMenu(new QMenu(this)),
-    mAction(new QAction(panel))
+    mAction(new QAction(this))
 
 {
-    //mAction->setCheckable(true);
-    setAutoRaise(true);
+    setAutoRaise(mTaskBar->mPinAutoRaise);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     setFocusPolicy(Qt::NoFocus);
     setDefaultAction(mAction);
-    setIconSize(QSize(mPanel->mHeight -4,mPanel->mHeight -4));
-    mAction->setIcon(mIcon);
 
+    mAction->setIcon(mIcon);
+    updateIconSize(mTaskBar->mPinIconHeight);
+    updatePinWidth(mTaskBar->mPinBtnWidth);
+
+    connect(mTaskBar, &TaskBar::pinAutoRaiseChanged, this, &PinButton::updateAutoRaise);
+    connect(mTaskBar, &TaskBar::pinIconHeightChanged, this, &PinButton::updateIconSize);
+    connect(mTaskBar, &TaskBar::pinBtnWidthChanged, this, &PinButton::updatePinWidth);
     connect(mAction, &QAction::triggered, this, &PinButton::actionClicked);
 }
+void PinButton::updateAutoRaise(bool autoRaise){
+    setAutoRaise(autoRaise);
+}
+void PinButton::updatePinWidth(int w){
+    setMinimumWidth(w);
+    setMaximumWidth(w);
+}
+void PinButton::updateIconSize(int h){
+    QSize size = QSize(h, h);
+    //mAction->setIcon(mIcon.pixmap(size).scaled(size));
+    setIconSize(size);
+    updateGeometry();
+}
 
-
-void PinButton::actionClicked(bool checked){
-    qDebug() << "checked" << checked;
-
+void PinButton::actionClicked(){
+    mGroup->startPin();
 }
 
 void PinButton::contextMenuEvent(QContextMenuEvent *event){
@@ -40,20 +57,13 @@ void PinButton::contextMenuEvent(QContextMenuEvent *event){
         a = mMenu->addAction(QString("Action %1 - Action Name").arg(i));
         a->setShortcutVisibleInContextMenu(false);
     }
-    a = mMenu->addAction("Close");
-    connect(a, &QAction::triggered, this, &PinButton::requestClose);
 
 
     //set menu position
-    auto menuGeo = mPanel->calculateMenuPosition(geometry().center() , mMenu->sizeHint(), 4, false);
+    auto center = mapFromParent(geometry().center());
+    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), mMenu->sizeHint(), 4, false);
+//    qDebug() << "geo" << center;
     mMenu->setGeometry(menuGeo);
-    mMenu->setFixedSize(menuGeo.size());
     mMenu->show();
 }
-void PinButton::updateMenu(){
-    QAction * a = mMenu->addAction("Close");
-    connect(a, &QAction::triggered, this, &PinButton::requestClose);
-}
-void PinButton::requestClose(){
 
-}
