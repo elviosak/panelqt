@@ -22,6 +22,7 @@ TaskGroup::TaskGroup(QString className, QIcon icon, TaskBar* taskbar, PanelQt * 
     mActionGroup(taskbar->mActionGroup),
     mPinButton(new PinButton(mIcon, mClassName, this, mTaskBar, mPanel))
 {
+    setAttribute(Qt::WA_NoMousePropagation);
     mShape = mTaskBar->mGroupShape;
     mShadow = mTaskBar->mGroupShadow;
     mLineWidth = mTaskBar->mGroupLineWidth;
@@ -54,6 +55,7 @@ void TaskGroup::changeButtonWidth(int w){
     int pinwidth = mTaskBar->mPinBtnWidth;
     int btnwidth = w;
     int newwidth = mPinned && mWinList.count() == 0 ? pinwidth : btnwidth * mWinList.count();
+    newwidth = newwidth - frameWidth() * 2;
     setMaximumWidth(newwidth);
     setMinimumWidth(newwidth);
     repaint();
@@ -125,7 +127,7 @@ void TaskGroup::setActive(WId id){
 void TaskGroup::addWindow(WId id, QString title, QIcon icon){
     if(!mWinList.contains(id)){
         auto btn = new TaskButton(id, icon, title, mClassName, mActionGroup, this, mTaskBar, mPanel);
-        mLayout->addWidget(btn);
+        mLayout->addWidget(btn, 1);
         //addWidget(btn);
         mWinList[id] = btn;
         mPinButton->hide();

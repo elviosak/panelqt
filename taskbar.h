@@ -13,7 +13,8 @@ class PanelQt;
 class TaskButton;
 class PinButton;
 class TaskGroup;
-class ToolButtonTextStyle;
+class ElideLabel;
+
 
 class TaskBar : public QFrame
 {
@@ -41,7 +42,8 @@ public:
     int mPinBtnWidth;
     bool mButtonAutoRaise;
     bool mPinAutoRaise;
-    ToolButtonTextStyle * mTBTextStyle;
+    ElideLabel * mElideLabel;
+    ElideLabel * mElideLabelUnderline;
     bool mButtonUnderline;
     QString mShape;
     QString mShadow;

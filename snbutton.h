@@ -39,7 +39,8 @@ public:
     void changeIconSize(int s);
     void changeButtonWidth(int w);
 
-    void updateIcon();
+    void saveIcon(QString status, QIcon i);
+    void resetIcon();
     void fetchIcon(QString status);
 
     void mouseReleaseEvent(QMouseEvent * event);

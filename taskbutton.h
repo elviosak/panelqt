@@ -13,7 +13,7 @@ enum TilePosition{
     Right
 };
 
-class TaskButton : public QToolButton
+class TaskButton : public QFrame
 {
     Q_OBJECT
     Q_ENUM(TilePosition)
@@ -27,6 +27,8 @@ public:
     void setActionCheck(bool check);
     void buttonWidthChanged(int w);
 
+    QLabel * mBtnIcon;
+    QLabel * mBtnText;
 
     WId mId;
     QIcon mIcon;
@@ -38,11 +40,22 @@ public:
 
     QMenu * mMenu;
     QAction * mAction;
+    bool mActive;
 
+    QPalette mPalette;
+    QPalette mLightPalette;
+
+    void activeWindowChanged(WId id);
+    void setActive(bool active);
     void updateAutoRaise(bool autoRaise);
     void updateIconSize(int height);
-    void changeIcon(QIcon icon);
+    void changeIcon(QIcon i);
+    void changeText(QString t);
 
+//    void mousePressEvent(QMouseEvent *e) override;
+    void enterEvent(QEvent *e) override;
+    void leaveEvent(QEvent *e) override;
+    void mouseReleaseEvent(QMouseEvent *e) override;
     void dragEnterEvent(QDragEnterEvent *e) override;
     void tileWindow(TilePosition pos, int perc);
     void moveApplicationToPrevNextMonitor(bool next);
@@ -50,7 +63,7 @@ private:
     void updateMenu();
     void requestClose();
     void actionClicked(bool checked);
-    void contextMenuEvent(QContextMenuEvent *event) override;
+    void showMenu();
 
 
 signals:

@@ -18,9 +18,10 @@ TaskBar::TaskBar(PanelQt * panel):
     conn(QX11Info::connection()),
     mLayout(new QHBoxLayout(this)),
     mPanel(panel),
-    mActionGroup(new QActionGroup(this)),
-    mTBTextStyle(new ToolButtonTextStyle(Qt::ElideRight, Qt::AlignLeft | Qt::AlignVCenter, QMargins(4,0,4,0)))
+    mActionGroup(new QActionGroup(this))
 {
+
+
     //Settings
     mPinnedList = mSettings->value("pinnedList", {}).toStringList();
     mMaxBtnWidth = mSettings->value("maxBtnWidth", 200).toInt();
@@ -42,14 +43,17 @@ TaskBar::TaskBar(PanelQt * panel):
     mGroupLineWidth = mGroupSettings->value("lineWidth", 1).toInt();
     mGroupMidLineWidth = mGroupSettings->value("midLineWidth", 0).toInt();
 
-    mTBTextStyle->mUnderline = mButtonUnderline;
+    mElideLabel = new ElideLabel(Qt::ElideRight, Qt::AlignLeft | Qt::AlignVCenter, QMargins(4,0,4,0));
+    mElideLabelUnderline = new ElideLabel(Qt::ElideRight, Qt::AlignLeft | Qt::AlignVCenter, QMargins(4,0,4,0));
+    mElideLabelUnderline->mUnderline = mButtonUnderline;
+    //mTBTextStyle->mUnderline = mButtonUnderline;
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
 
     setWindowFlag(Qt::FramelessWindowHint);
     this->setContentsMargins(0,0,0,0);
 
     mLayout->setMargin(0);
-    mLayout->setSpacing(0);
+    mLayout->setSpacing(2);
     mLayout->setAlignment(Qt::AlignmentFlag::AlignLeft);
     setLayout(mLayout);
 
@@ -65,6 +69,12 @@ TaskBar::TaskBar(PanelQt * panel):
     connect(KWindowSystem::self(), &KWindowSystem::windowRemoved, this, &TaskBar::windowRemoved);
     connect(KWindowSystem::self(), &KWindowSystem::activeWindowChanged, this, &TaskBar::activeWindowChanged);
     repaint();
+
+
+    KWindowInfo info(104857605, NET::WMAllProperties, NET::WM2AllProperties);
+
+    qDebug() << "telegram" << info.windowClassName() <<info.state();
+
 }
 void TaskBar::groupChangeShape(QString s){
     mGroupShape = s;
@@ -116,7 +126,7 @@ void TaskBar::changeFrame(){
 void TaskBar::setButtonUnderline(bool u){
     mButtonUnderline = u;
     mSettings->setValue("buttonUnderline", u);
-    mTBTextStyle->mUnderline = u;
+    mElideLabelUnderline->mUnderline = u;
     repaint();
 }
 void TaskBar::setButtonAutoRaise(bool autoRaise){
@@ -244,7 +254,7 @@ void TaskBar::swapGroups(QObject *enteredObj, QObject *draggedObj){
     if(dst && src){
         int srcindex = mLayout->indexOf(src);
         int dstindex = mLayout->indexOf(dst);
-
+        qDebug() << "swap src:" << src->mClassName << "dst" << dst->mClassName;
         auto item = mLayout->takeAt(srcindex);
         mLayout->insertItem(dstindex, item);
         QTimer::singleShot(0, this, &TaskBar::savePinList);
@@ -277,7 +287,7 @@ void TaskBar::recalculateButtons(){
         if(currentWindows == 0 && i.value()->mPinned)
             pinnedCount++;
     }
-    int btnWidth = windowCount > 0 ? (size().width() - pinnedCount * mPinBtnWidth)/windowCount : mMaxBtnWidth;
+    int btnWidth = windowCount > 0 ? (size().width() - mLayout->count() * mLayout->spacing() - pinnedCount * mPinBtnWidth)/windowCount : mMaxBtnWidth;
     btnWidth = btnWidth > mMaxBtnWidth ? mMaxBtnWidth : btnWidth;
     //qDebug() << "recalculateButtons" << btnWidth;
 
@@ -287,25 +297,67 @@ bool TaskBar::acceptWindow(WId id, bool changed){
     if(mIdList.contains(id) && !changed)
         return false;
 
-    KWindowInfo info(id, NET::WMState | NET::WMWindowType | NET::WMGeometry, NET::WM2WindowClass | NET::WM2TransientFor | NET::WM2DesktopFileName);
-    if (!mShowAllScreens){
-        auto screenGeo = QApplication::screens()[mPanel->mScreen]->geometry();
-        if(!info.geometry().intersects(screenGeo))
-            return false;
+    KWindowInfo info(id, NET::WMWindowType | NET::WMState |NET::WMGeometry, NET::WM2TransientFor);
+    if (!info.valid())
+        return false;
+    auto screenGeo = QApplication::screens()[mPanel->mScreen]->geometry();
+
+    if (!mShowAllScreens && !info.geometry().intersects(screenGeo)){
+        return false;
     }
 
-    NET::States rejectedStates = NET::SkipPager | NET::SkipTaskbar | NET::SkipSwitcher;
-    //NET::WindowTypes acceptedTypes = NET::NormalMask | NET::DialogMask; //| NET::Unknown;
-    if(info.hasState(rejectedStates)){
-        //qDebug() << info.windowClassName() << "rejectedStates";
+    QFlags<NET::WindowTypeMask> ignoreList;
+    ignoreList |= NET::DesktopMask;
+    ignoreList |= NET::DockMask;
+    ignoreList |= NET::SplashMask;
+    ignoreList |= NET::ToolbarMask;
+    ignoreList |= NET::MenuMask;
+    ignoreList |= NET::PopupMenuMask;
+    ignoreList |= NET::NotificationMask;
+
+
+
+    if (NET::typeMatchesMask(info.windowType(NET::AllTypesMask), ignoreList))
         return false;
-    }
-    NET::WindowType type = info.windowType(NET::AllTypesMask);
-    if(type > 0 || type == 5){ // -1 is unknown
-        //qDebug() << info.windowClassName() << "acceptedTypes" << type;
+
+    if (info.state() & NET::SkipTaskbar)
         return false;
-    }
-    return true;
+
+    // WM_TRANSIENT_FOR hint not set - normal window
+    WId transFor = info.transientFor();
+    if (transFor == 0 || transFor == id || transFor == (WId) QX11Info::appRootWindow())
+        return true;
+
+    info = KWindowInfo(transFor, NET::WMWindowType);
+
+    QFlags<NET::WindowTypeMask> normalFlag;
+    normalFlag |= NET::NormalMask;
+    normalFlag |= NET::DialogMask;
+    normalFlag |= NET::UtilityMask;
+
+    return !NET::typeMatchesMask(info.windowType(NET::AllTypesMask), normalFlag);
+//    if(mIdList.contains(id) && !changed)
+//        return false;
+
+//    KWindowInfo info(id, NET::WMState | NET::WMWindowType | NET::WMGeometry, NET::WM2WindowClass | NET::WM2TransientFor | NET::WM2DesktopFileName);
+//    if (!mShowAllScreens){
+//        auto screenGeo = QApplication::screens()[mPanel->mScreen]->geometry();
+//        if(!info.geometry().intersects(screenGeo))
+//            return false;
+//    }
+
+//    NET::States rejectedStates = NET::SkipPager | NET::SkipTaskbar | NET::SkipSwitcher;
+//    //NET::WindowTypes acceptedTypes = NET::NormalMask | NET::DialogMask; //| NET::Unknown;
+//    if(info.hasState(rejectedStates)){
+//        //qDebug() << info.windowClassName() << "rejectedStates";
+//        return false;
+//    }
+//    NET::WindowType type = info.windowType(NET::AllTypesMask);
+//    if(type > 0 || type == 5){ // -1 is unknown
+//        //qDebug() << info.windowClassName() << "acceptedTypes" << type;
+//        return false;
+//    }
+//    return true;
 }
 void TaskBar::activeWindowChanged(WId id){
     Q_UNUSED(id);

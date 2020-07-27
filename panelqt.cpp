@@ -34,8 +34,8 @@ PanelQt::PanelQt(QString panelName, QWidget *parent):
         mScreen = QApplication::screens().count() - 1;
 
 
-    setAttribute(Qt::WA_TranslucentBackground);
-    setAttribute(Qt::WA_OpaquePaintEvent);
+    //setAttribute(Qt::WA_TranslucentBackground);
+    //setAttribute(Qt::WA_OpaquePaintEvent);
 
 //    setFrameShape(Shape::StyledPanel);
 //    setFrameShadow(Shadow::Raised);
