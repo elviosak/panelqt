@@ -5,6 +5,22 @@
 #include <dbusmenu-qt5/dbusmenuimporter.h>
 #include <KWindowSystem>
 
+
+/*! \brief specialized DBusMenuImporter to correctly create actions' icons based
+ * on name
+ */
+class MenuImporter : public DBusMenuImporter
+{
+public:
+    using DBusMenuImporter::DBusMenuImporter;
+
+protected:
+    virtual QIcon iconForName(const QString & name) override
+    {
+        return QIcon::fromTheme(name);
+    }
+};
+
 SNButton::SNButton(QString service, QString objectPath, SNFrame * frame)
     : QToolButton(frame),
       mFrame(frame),
@@ -82,8 +98,8 @@ void SNButton::showMenu(){
     mInterface->propertyGetAsync(QLatin1String("Menu"), [=] (QDBusObjectPath path) {
         if (!path.path().isEmpty())
         {
-            auto importer = new DBusMenuImporter(mInterface->service(), path.path(), this);
-            connect(importer, &DBusMenuImporter::menuUpdated, this, [=]{
+            auto importer = new MenuImporter(mInterface->service(), path.path(), this);
+            connect(importer, &MenuImporter::menuUpdated, this, [=]{
                 QMenu * m = new QMenu(importer->menu()->title());
                 m->addAction(configAction());
                 m->addSeparator();

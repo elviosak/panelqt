@@ -12,6 +12,8 @@ class Clock : public QFrame
 public:
     Clock(PanelQt * panel);
     ~Clock();
+
+    void updateFont();
 private:
     QString mPanelName;
     QSettings * mSettings;
@@ -40,6 +42,7 @@ private:
     void changeMidLineWidth(int w);
     void changeFrame();
 
+
     void showDialog();
     void setUsePanelFont(bool usePanelFont);
     void setClockFont(QFont font);
@@ -48,6 +51,7 @@ private:
     void setClockMargin(int newMargin);
     void setClockDirection(int newDirection);
     void saveSettings();
+
 
     void updateClock();
     void startTimer();

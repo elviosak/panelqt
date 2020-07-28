@@ -87,6 +87,10 @@ void AppMenu::showConfig(){
     auto form = new QFormLayout(d);
     d->setLayout(form);
 
+    auto generalGroup = new QGroupBox("AppMenu Settings:", d);
+    auto generalForm = new QFormLayout(generalGroup);
+    generalGroup->setLayout(generalForm);
+
     auto showActionsCheck = new QCheckBox(d);
     auto hScaleSpin = new QDoubleSpinBox(d);
     auto vScaleSpin = new QDoubleSpinBox(d);
@@ -101,19 +105,22 @@ void AppMenu::showConfig(){
     connect(showActionsCheck, &QCheckBox::toggled, this, &AppMenu::changeShowAllActions);
     connect(hScaleSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &AppMenu::changeHScale);
     connect(vScaleSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &AppMenu::changeVScale);
-    form->addRow("Show all actions:", showActionsCheck);
-    form->addRow("Horizontal scale:", hScaleSpin);
-    form->addRow("Vertical scale:", vScaleSpin);
-    auto categoriesGroup = new QGroupBox("Show Categoris:");
+    generalForm->addRow("Show all actions:", showActionsCheck);
+    generalForm->addRow("Horizontal scale:", hScaleSpin);
+    generalForm->addRow("Vertical scale:", vScaleSpin);
+
+    auto categoriesGroup = new QGroupBox("Show Categories:");
     auto categoriesForm = new QFormLayout(categoriesGroup);
     categoriesGroup->setLayout(categoriesForm);
+
     for (auto i = mOrderedCategories.begin(); i != mOrderedCategories.end(); ++i){
         auto catCheck = new QCheckBox(categoriesGroup);
         catCheck->setChecked(mShownCategories.contains(i.key()));
         connect(catCheck, &QCheckBox::toggled, this, [=] (bool add) { changeShownCategories(i.key(), add);});
         categoriesForm->addRow(i.key(), catCheck);
     }
-    form->addRow(categoriesGroup);
+
+    form->addRow(generalGroup, categoriesGroup);
 
     auto center = geometry().center();
     auto geo = mPanel->calculateMenuPosition(center, d->sizeHint(), 4, false);

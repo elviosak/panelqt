@@ -37,17 +37,15 @@ public:
     TaskGroup * mGroup;
     TaskBar * mTaskBar;
     PanelQt * mPanel;
+    QHBoxLayout * mLayout;
 
-    QMenu * mMenu;
-    QAction * mAction;
     bool mActive;
+    QPalette::ColorRole mPaletteColor;
 
-    QPalette mPalette;
-    QPalette mLightPalette;
-
+    void paintEvent(QPaintEvent *event) override;
     void activeWindowChanged(WId id);
     void setActive(bool active);
-    void updateAutoRaise(bool autoRaise);
+
     void updateIconSize(int height);
     void changeIcon(QIcon i);
     void changeText(QString t);
@@ -60,7 +58,6 @@ public:
     void tileWindow(TilePosition pos, int perc);
     void moveApplicationToPrevNextMonitor(bool next);
 private:
-    void updateMenu();
     void requestClose();
     void actionClicked(bool checked);
     void showMenu();

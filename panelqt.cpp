@@ -34,8 +34,8 @@ PanelQt::PanelQt(QString panelName, QWidget *parent):
         mScreen = QApplication::screens().count() - 1;
 
 
-    //setAttribute(Qt::WA_TranslucentBackground);
-    //setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_OpaquePaintEvent);
 
 //    setFrameShape(Shape::StyledPanel);
 //    setFrameShadow(Shadow::Raised);
@@ -117,6 +117,7 @@ void PanelQt::setPanelFont(QFont font){
     mFont = font;
     setFont(mFont);
     mSettings->setValue("font", mFont.toString());
+    if(mClock) mClock->updateFont();
 }
 
 void PanelQt::mousePressEvent(QMouseEvent *event){
@@ -252,7 +253,7 @@ void PanelQt::showDialog(QPoint pos){
     auto box = new QHBoxLayout(dialog);
 
     //Panel config
-    auto panelGroup = new QGroupBox("Panel Config", dialog);
+    auto panelGroup = new QGroupBox("Panel Settings:", dialog);
     auto panelForm = new QFormLayout(panelGroup);
 
     auto fontCheck = new QCheckBox(QString("%1 %2, %3")
@@ -340,7 +341,7 @@ void PanelQt::showDialog(QPoint pos){
 
 
     //Taskbar config
-    auto taskbarGroup = new QGroupBox("TaskBar Config", dialog);
+    auto taskbarGroup = new QGroupBox("TaskBar Settings", dialog);
     auto taskbarForm = new QFormLayout(taskbarGroup);
 
     auto showScreenCheck = new QCheckBox(taskbarGroup);
@@ -373,7 +374,7 @@ void PanelQt::showDialog(QPoint pos){
 
     //////GROUP
 
-    auto groupGroup = new QGroupBox("Group Config", dialog);
+    auto groupGroup = new QGroupBox("Group:", dialog);
     auto groupForm =new QFormLayout(groupGroup);
     groupGroup->setLayout(groupForm);
 
@@ -404,13 +405,12 @@ void PanelQt::showDialog(QPoint pos){
     taskbarForm->addRow(groupGroup);
 
     //////BUTTONS
-    auto buttonGroup = new QGroupBox("Button Config", dialog);
+    auto buttonGroup = new QGroupBox("Button:", dialog);
     auto buttonForm = new QFormLayout(buttonGroup);
     buttonGroup->setLayout(buttonForm);
 
     auto maxBtnWidthSpin = new QSpinBox(taskbarGroup);
     auto iconHeightSpin = new QSpinBox(taskbarGroup);
-    auto buttonRaiseCheck = new QCheckBox(taskbarGroup);
     auto buttonUnderline = new QCheckBox(taskbarGroup);
 
     maxBtnWidthSpin->setRange(50, 500);
@@ -418,43 +418,39 @@ void PanelQt::showDialog(QPoint pos){
     maxBtnWidthSpin->setMinimumWidth(50);
     iconHeightSpin->setRange(12,128);
     iconHeightSpin->setValue(mTaskBar->mIconHeight);
-    buttonRaiseCheck->setChecked(mTaskBar->mButtonAutoRaise);
     buttonUnderline->setChecked(mTaskBar->mButtonUnderline);
 
     buttonForm->addRow("Width:", maxBtnWidthSpin);
     buttonForm->addRow("Icon size", iconHeightSpin);
-    buttonForm->addRow("Button auto raise:", buttonRaiseCheck);
     buttonForm->addRow("Underline active button:", buttonUnderline);
 
     connect(maxBtnWidthSpin,    QOverload<int>::of(&QSpinBox::valueChanged),    mTaskBar, &TaskBar::setMaxBtnWidth);
     connect(iconHeightSpin,     QOverload<int>::of(&QSpinBox::valueChanged),    mTaskBar, &TaskBar::setIconHeight);
-    connect(buttonRaiseCheck,   &QCheckBox::toggled,                            mTaskBar, &TaskBar::setButtonAutoRaise);
     connect(buttonUnderline,    &QCheckBox::toggled,                            mTaskBar, &TaskBar::setButtonUnderline);
 
     taskbarForm->addRow(buttonGroup);
 
     ////////PINS
-    auto pinGroup = new QGroupBox("Pin Config", dialog);
+    auto pinGroup = new QGroupBox("Pin:", dialog);
     auto pinForm = new QFormLayout(pinGroup);
     pinGroup->setLayout(pinForm);
 
     auto pinIconHeightSpin = new QSpinBox(taskbarGroup);
     auto pinBtnWidthSpin = new QSpinBox(taskbarGroup);
-    auto pinRaiseCheck = new QCheckBox(taskbarGroup);
+
 
     pinIconHeightSpin->setRange(12,128);
     pinIconHeightSpin->setValue(mTaskBar->mPinIconHeight);
     pinBtnWidthSpin->setRange(12,500);
     pinBtnWidthSpin->setValue(mTaskBar->mPinBtnWidth);
-    pinRaiseCheck->setChecked(mTaskBar->mPinAutoRaise);
+
 
     pinForm->addRow("Icon size:", pinIconHeightSpin);
     pinForm->addRow("Width:", pinBtnWidthSpin);
-    pinForm->addRow("Auto raise:", pinRaiseCheck);
 
     connect(pinIconHeightSpin,  QOverload<int>::of(&QSpinBox::valueChanged),    mTaskBar, &TaskBar::setPinIconHeight);
     connect(pinBtnWidthSpin,    QOverload<int>::of(&QSpinBox::valueChanged),    mTaskBar, &TaskBar::setPinBtnWidth);
-    connect(pinRaiseCheck,      &QCheckBox::toggled,                            mTaskBar, &TaskBar::setPinAutoRaise);
+
 
     taskbarForm->addRow(pinGroup);
 

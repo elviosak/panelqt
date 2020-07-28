@@ -6,41 +6,97 @@
 //pinned button icon
 PinButton::~PinButton(){}
 PinButton::PinButton(QIcon icon, QString className, TaskGroup * group, TaskBar * taskbar, PanelQt * panel):
-    QToolButton(group),
+    QFrame(group),
     mIcon(icon),
     mClassName(className),
     mGroup(group),
     mTaskBar(taskbar),
-    mPanel(panel),
-    mMenu(new QMenu(this)),
-    mAction(new QAction(this))
-
+    mPanel(panel)
 {
-    setAutoRaise(mTaskBar->mPinAutoRaise);
+    setFrameShape(Shape::Box);
+    setFrameShadow(Shadow::Plain);
+    setLineWidth(1);
+    setMidLineWidth(1);
+    auto box = new QHBoxLayout(this);
+    mBtnIcon = new QLabel(this);
+    box->setMargin(0);
+    box->setSpacing(0);
+    //box.setAlignment(Qt::Alignment::)
+    setLayout(box);
+    mPaletteColor = QPalette::Window;
+    QSize size(mTaskBar->mPinIconHeight, mTaskBar->mPinIconHeight);
+    mBtnIcon->setPixmap(mIcon.pixmap(size));
+    //mBtnIcon->setMaximumWidth(mTaskBar->mPinBtnWidth);
+    mBtnIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    box->addWidget(mBtnIcon,1, Qt::AlignCenter);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     setFocusPolicy(Qt::NoFocus);
-    setDefaultAction(mAction);
 
-    mAction->setIcon(mIcon);
-    updateIconSize(mTaskBar->mPinIconHeight);
-    updatePinWidth(mTaskBar->mPinBtnWidth);
-
-    connect(mTaskBar, &TaskBar::pinAutoRaiseChanged, this, &PinButton::updateAutoRaise);
+    setMinimumWidth(mTaskBar->mPinBtnWidth);
+    setMaximumWidth(mTaskBar->mPinBtnWidth);
     connect(mTaskBar, &TaskBar::pinIconHeightChanged, this, &PinButton::updateIconSize);
     connect(mTaskBar, &TaskBar::pinBtnWidthChanged, this, &PinButton::updatePinWidth);
-    connect(mAction, &QAction::triggered, this, &PinButton::actionClicked);
 }
-void PinButton::updateAutoRaise(bool autoRaise){
-    setAutoRaise(autoRaise);
+void PinButton::paintEvent(QPaintEvent *event){
+    QPainter painter(this);
+    QColor color(palette().color(mPaletteColor));
+    color.setAlpha(mPanel->mOpacity);
+    painter.fillRect(event->rect(), color);
 }
+void PinButton::leaveEvent(QEvent *e){
+    mHover = false;
+    mPaletteColor = QPalette::Window;
+    repaint();
+    e->accept();
+}
+void PinButton::enterEvent(QEvent *e){
+    mPaletteColor = QPalette::Light;
+    mHover = true;
+    repaint();
+    e->accept();
+}
+void PinButton::mousePressEvent(QMouseEvent *e){
+    if(e->button() == Qt::LeftButton){
+        handleClick(true);
+    }
+}
+void PinButton::mouseReleaseEvent(QMouseEvent *e){
+    if(e->button() == Qt::LeftButton){
+        handleClick(false);
+        e->accept();
+    }else if(e->button() == Qt::RightButton){
+        e->accept();
+        showMenu();
+    }
+}
+void PinButton::handleClick(bool press){
+    if(press){
+        mPaletteColor = QPalette::Base;
+    }else {
+        if(mHover){
+            mPaletteColor = QPalette::Light;
+        }else {
+            mPaletteColor = QPalette::Window;
+        }
+        mGroup->startPin();
+    }
+    repaint();
+}
+void PinButton::changeIcon(QIcon icon){
+    if (!icon.isNull()){
+        QSize size = QSize(mTaskBar->mIconHeight, mTaskBar->mIconHeight);
+        mBtnIcon->setPixmap(mIcon.pixmap(size));
+        mIcon = icon;
+    }
+}
+
 void PinButton::updatePinWidth(int w){
     setMinimumWidth(w);
     setMaximumWidth(w);
 }
 void PinButton::updateIconSize(int h){
     QSize size = QSize(h, h);
-    //mAction->setIcon(mIcon.pixmap(size).scaled(size));
-    setIconSize(size);
+    mBtnIcon->setPixmap(mIcon.pixmap(size));
     updateGeometry();
 }
 
@@ -48,22 +104,23 @@ void PinButton::actionClicked(){
     mGroup->startPin();
 }
 
-void PinButton::contextMenuEvent(QContextMenuEvent *event){
-    Q_UNUSED(event);
-    mMenu->clear();
+void PinButton::showMenu(){
+    QMenu * menu = new QMenu(this);
     //_menu.set
     QAction * a;
-    for (int i = 0; i < 10; ++i) {
-        a = mMenu->addAction(QString("Action %1 - Action Name").arg(i));
-        a->setShortcutVisibleInContextMenu(false);
-    }
+    a = menu->addAction(mIcon, QString("New Instance: %1").arg(mGroup->mCmd));
+    connect(a, &QAction::triggered, mGroup, &TaskGroup::startPin);
+
+    a = menu->addAction(QString("Remove Pin"));
+    connect(a, &QAction::triggered, mGroup, &TaskGroup::removePin);
+    menu->addSeparator();
 
 
     //set menu position
     auto center = mapFromParent(geometry().center());
-    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), mMenu->sizeHint(), 4, false);
+    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), menu->sizeHint(), 4, false);
 //    qDebug() << "geo" << center;
-    mMenu->setGeometry(menuGeo);
-    mMenu->show();
+    menu->setGeometry(menuGeo);
+    menu->show();
 }
 

@@ -20,68 +20,22 @@ TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, QAc
     mGroup(group),
     mTaskBar(taskbar),
     mPanel(panel),
-    mMenu(new QMenu(this)),
     mActive(KWindowSystem::activeWindow() == mId)
     //mAction(actionGroup->addAction(new QAction(panel)))
 
 {
-    //setAttribute(Qt::WA_Hover);
-    //setMouseTracking(true);
-
-    mPalette = palette();
-    mLightPalette = palette();
-    //mLightPalette.setColor(QPalette::Window, mPalette.color(QPalette::Midlight));
-    //mLightPalette = QPalette(mPalette.color(QPalette::Midlight));
-
-//    QColor textColor(mPalette.color(QPalette::WindowText));
-//    QColor bgColor(mPalette.color(QPalette::Window));
-//    textColor.setRed((textColor.red() * 3 + bgColor.red()) / 4);
-//    textColor.setGreen((textColor.green() * 3 + bgColor.green()) / 4);
-//    textColor.setBlue((textColor.blue() * 3 + bgColor.blue())/ 4);
-//    mPalette.setColor(QPalette::WindowText, textColor);
-//    mLightPalette = palette();
-
-    //mLightPalette.setColor(QPalette::WindowText, textColor);
-
-    //auto colorGroup = QPalette::All;
-
-//    mLightPalette.setColor(colorGroup,QPalette::Background, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::WindowText, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Foreground, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Base, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::AlternateBase, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::ToolTipBase, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::ToolTipText, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::PlaceholderText, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Text, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Button, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::ButtonText, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::BrightText, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::WindowText, Qt::blue);
-
-//    mLightPalette.setColor(colorGroup,QPalette::Light, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Midlight, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Dark, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Mid, Qt::blue);
-//    mLightPalette.setColor(colorGroup,QPalette::Shadow, Qt::blue);
-
-    setAutoFillBackground(true);
-
     auto box = new QHBoxLayout;
     box->setMargin(0);
     box->setSpacing(0);
     setLayout(box);
     auto innerFrame = new QFrame;
-
-
     innerFrame->setFrameShape(Shape::NoFrame);
     box->addSpacing(2);
-    //innerFrame->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     box->addWidget(innerFrame);
     auto hbox = new QHBoxLayout();
     hbox->setDirection(QBoxLayout::LeftToRight);
     hbox->setMargin(0);
-    hbox->setSpacing(1);
+    hbox->setSpacing(0);
     innerFrame->setLayout(hbox);
     mBtnIcon = new QLabel;
     mBtnText = new QLabel;
@@ -106,11 +60,16 @@ TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, QAc
     setFocusPolicy(Qt::NoFocus);
     setAcceptDrops(true);
 
-    connect(mTaskBar, &TaskBar::buttonAutoRaiseChanged, this, &TaskButton::updateAutoRaise);
     connect(mTaskBar, &TaskBar::iconHeightChanged, this, &TaskButton::updateIconSize);
     connect(KWindowSystem::self(), &KWindowSystem::activeWindowChanged, this, &TaskButton::activeWindowChanged);
     connect(mTaskBar, &TaskBar::buttonWidthChanged, this, &TaskButton::buttonWidthChanged);
     //connect(mAction, &QAction::triggered, this, &TaskButton::actionClicked);
+}
+void TaskButton::paintEvent(QPaintEvent *event){
+    QPainter painter(this);
+    QColor color(palette().color(mPaletteColor));
+    color.setAlpha(mPanel->mOpacity);
+    painter.fillRect(event->rect(), color);
 }
 void TaskButton::leaveEvent(QEvent *e){
     qDebug() << "hover leave";
@@ -121,8 +80,9 @@ void TaskButton::leaveEvent(QEvent *e){
 }
 void TaskButton::enterEvent(QEvent *e){
     qDebug() << "hover enter";
-    setBackgroundRole(QPalette::Light);
-    //setPalette(mLightPalette);
+    //setBackgroundRole(QPalette::Light);
+    mPaletteColor = QPalette::Light;
+    repaint();
     e->accept();
 }
 void TaskButton::activeWindowChanged(WId id){
@@ -148,17 +108,18 @@ void TaskButton::setActive(bool active){
         setFrameShape(Shape::StyledPanel);
         setFrameShadow(Shadow::Sunken);
         mBtnText->setStyle(mTaskBar->mElideLabelUnderline);
-        setBackgroundRole(QPalette::Base);
+        //setBackgroundRole(QPalette::Base);
+        mPaletteColor = QPalette::Base;
     }else {
         setFrameShape(Shape::StyledPanel);
         setFrameShadow(Shadow::Raised);
         mBtnText->setStyle(mTaskBar->mElideLabel);
-        setBackgroundRole(QPalette::Button);
+        //setBackgroundRole(QPalette::Button);
+        mPaletteColor = QPalette::Window;
     }
+    repaint();
 }
-void TaskButton::updateAutoRaise(bool autoRaise){
-    //setAutoRaise(autoRaise);
-}
+
 void TaskButton::updateIconSize(int h){
     QSize size = QSize(h, h);
     //mAction->setIcon(mIcon.pixmap(size).scaled(size));
@@ -304,13 +265,11 @@ void TaskButton::mouseReleaseEvent(QMouseEvent *event){
     event->accept();
 }
 void TaskButton::showMenu(){
-    QMenu * menu = new QMenu;
-    //_menu.set
+    QMenu * menu = new QMenu(this);
     QAction * a;
     // pin actions
     if(mGroup->mPinned){
-        auto cmd = mGroup->mCmd;
-        a = menu->addAction(mIcon, QString("New Instance: %1").arg(cmd));
+        a = menu->addAction(mIcon, QString("New Instance: %1").arg(mGroup->mCmd));
         connect(a, &QAction::triggered, mGroup, &TaskGroup::startPin);
 
         a = menu->addAction(QString("Remove Pin"));
@@ -362,10 +321,7 @@ void TaskButton::showMenu(){
     menu->setGeometry(menuGeo);
     menu->show();
 }
-void TaskButton::updateMenu(){
-    QAction * a = mMenu->addAction("Close");
-    connect(a, &QAction::triggered, this, &TaskButton::requestClose);
-}
+
 void TaskButton::requestClose(){
     emit closeRequested(mId);
 }

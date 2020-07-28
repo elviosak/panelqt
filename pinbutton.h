@@ -7,7 +7,7 @@ class PanelQt;
 class TaskBar;
 class TaskGroup;
 
-class PinButton : public QToolButton
+class PinButton : public QFrame
 {
     Q_OBJECT
 
@@ -20,16 +20,28 @@ public:
     TaskGroup * mGroup;
     TaskBar * mTaskBar;
     PanelQt * mPanel;
-
     QMenu * mMenu;
-    QAction * mAction;
 
-    void updateAutoRaise(bool autoRaise);
+    QLabel * mBtnIcon;
+    QPalette::ColorRole mPaletteColor;
+    bool mHover;
+
+    void enterEvent(QEvent *e) override;
+    void leaveEvent(QEvent *e) override;
+
+    void paintEvent(QPaintEvent *event) override;
+    void mousePressEvent(QMouseEvent * e) override;
+    void mouseReleaseEvent(QMouseEvent * e) override;
+
+    void handleClick(bool press); // press or release
+
+    void setActive(bool active);
+    void changeIcon(QIcon i);
     void updatePinWidth(int w);
     void updateIconSize(int h);
 private:
     void actionClicked();
-    void contextMenuEvent(QContextMenuEvent *event);
+    void showMenu();
 
 signals:
 

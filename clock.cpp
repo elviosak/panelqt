@@ -31,23 +31,20 @@ Clock::Clock(PanelQt * panel):
     mLineWidth = mSettings->value("lineWidth", 1).toInt();
     mMidLineWidth = mSettings->value("midLineWidth", 1).toInt();
 
-    //qDebug() << mFont.family() << mFont.pixelSize() << mFont.pointSize() << mFont.weight();
+
 
 
     mLayout = new QBoxLayout(mDirection, this);
     mLayout->setMargin(mMargin);
-//    setFrameShape(Shape::StyledPanel);
-//    setFrameShadow(Shadow::Sunken);
 
     changeFrame();
 
-    mDateLabel->setAlignment(Qt::AlignCenter);
-    mTimeLabel->setAlignment(Qt::AlignCenter);
+    //mDateLabel->setAlignment(Qt::AlignCenter);
+    //mTimeLabel->setAlignment(Qt::AlignCenter);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
     setLayout(mLayout);
-
-    mLayout->addWidget(mDateLabel);
-    mLayout->addWidget(mTimeLabel);
+    mLayout->addWidget(mDateLabel, Qt::AlignCenter);
+    mLayout->addWidget(mTimeLabel, Qt::AlignCenter);
     updateClock();
     connect(mTimer, &QTimer::timeout, this, &Clock::updateClock);
     startTimer();
@@ -221,20 +218,19 @@ void Clock::showDialog(){
     //connect(fontButton, QPushButton::textC)
     dialog->show();
 }
+void Clock::updateFont(){
+    mUsePanelFont ?  setFont(mPanel->font()) : setFont(mFont);
+}
+
 void Clock::setUsePanelFont(bool usePanelFont){
     mUsePanelFont = usePanelFont;
     mSettings->setValue("usePanelFont", usePanelFont);
-    if(usePanelFont){
-        setFont(mPanel->font());
-    }
-    else {
-        setFont(mFont);
-    }
+    updateFont();
 }
 void Clock::setClockFont(QFont font){
     mFont = font;
-    setFont(mFont);
     mSettings->setValue("font", mFont.toString());
+    updateFont();
 }
 void Clock::setDateFormat(QString newDateFormat){
     mDateFormat = newDateFormat;

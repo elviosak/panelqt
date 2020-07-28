@@ -28,7 +28,7 @@ TaskGroup::TaskGroup(QString className, QIcon icon, TaskBar* taskbar, PanelQt * 
     mLineWidth = mTaskBar->mGroupLineWidth;
     mMidLineWidth = mTaskBar->mGroupMidLineWidth;
 
-    setSizePolicy(QSizePolicy::Minimum, QSizePolicy::MinimumExpanding);
+    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
     setFrameShape(Shape::NoFrame);
     setWindowFlag(Qt::FramelessWindowHint);
     this->setContentsMargins(0,0,0,0);
@@ -51,13 +51,10 @@ TaskGroup::TaskGroup(QString className, QIcon icon, TaskBar* taskbar, PanelQt * 
     connect(mTaskBar, &TaskBar::buttonWidthChanged, this, &TaskGroup::changeButtonWidth);
 }
 void TaskGroup::changeButtonWidth(int w){
-
     int pinwidth = mTaskBar->mPinBtnWidth;
     int btnwidth = w;
-    int newwidth = mPinned && mWinList.count() == 0 ? pinwidth : btnwidth * mWinList.count();
-    newwidth = newwidth - frameWidth() * 2;
+    int newwidth = mPinned && mWinList.count() == 0 ? pinwidth + frameWidth() * 2: btnwidth * mWinList.count() + frameWidth();
     setMaximumWidth(newwidth);
-    setMinimumWidth(newwidth);
     repaint();
 }
 void TaskGroup::changeShape(QString s){
