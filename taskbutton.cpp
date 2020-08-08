@@ -180,22 +180,19 @@ void TaskButton::tileWindow(TilePosition pos, int pixels){
         KWindowSystem::unminimizeWindow(mId);
     KWindowSystem::forceActiveWindow(mId);
 
-    auto screen = QApplication::screens()[mPanel->mScreen];
-    auto screenGeo = screen->availableGeometry();
 
     int frameLeft = qAbs(info.frameGeometry().left() - info.geometry().left());
     int frameRight = qAbs(info.frameGeometry().right() - info.geometry().right());
     int frameTop = qAbs(info.frameGeometry().top() - info.geometry().top());
     int frameBottom = qAbs(info.frameGeometry().bottom() - info.geometry().bottom());
 
-    if (screenGeo.isEmpty() || screenGeo == QRect(0, 0, 0, 0)){
-        qDebug() << "empty";
-        screenGeo = screen->geometry();
-        if (mPanel->mPosition == "Bottom"){
-            screenGeo.setBottom(screenGeo.bottom() - mPanel->mHeight - 2);
-        }else if (mPanel->mPosition == "Top") {
-            screenGeo.setTop(screenGeo.top() + mPanel->mHeight + 2);
-        }
+    auto screen = QApplication::screens()[mPanel->mScreen];
+    auto screenGeo = screen->geometry();
+    qDebug() << "available" << screenGeo << screenGeo.top() << screenGeo.bottom();
+    if (mPanel->mPosition == "Bottom"){
+        screenGeo.setBottom(screenGeo.bottom() - mPanel->mHeight - 2);
+    }else if (mPanel->mPosition == "Top") {
+        screenGeo.setTop(screenGeo.top() + mPanel->mHeight + 2);
     }
 
     int height = screenGeo.height();

@@ -303,13 +303,13 @@ QRect PanelQt::calculateMenuPosition(QPoint pos, QSize size, int gap, bool isGlo
     return menuGeo;
 }
 void PanelQt::calculateGeometry(){
-    QRect scr_geo = QApplication::screens()[mScreen]->geometry();
+    QRect scrGeo = QApplication::screens()[mScreen]->geometry();
 
     if (mPosition == "Bottom"){
-        mGeometry = QRect(scr_geo.bottomLeft() - QPoint(0, mHeight), scr_geo.bottomRight());
+        mGeometry = QRect(QPoint(scrGeo.left(), scrGeo.bottom() - mHeight), QPoint(scrGeo.right(), scrGeo.bottom()));
     }
     else if(mPosition == "Top") {
-        mGeometry = QRect(scr_geo.topLeft(), scr_geo.topRight() + QPoint(0, mHeight));
+        mGeometry = QRect(QPoint(scrGeo.left(), scrGeo.top()), QPoint(scrGeo.right(), scrGeo.top() + mHeight));
     }
     int w = mGeometry.width() * mWidthPercentage / 100;
     int left = mGeometry.left();
@@ -320,13 +320,15 @@ void PanelQt::calculateGeometry(){
     }
     mGeometry.setWidth(w);
     mGeometry.moveLeft(left);
+    qDebug() << "calculateGeometry" << mGeometry << mGeometry.bottom() << scrGeo.bottom();
 }
 
 void PanelQt::updateStrut(){
-
-//    auto geo = QApplication::screens()[mScreen] -> geometry();
+//    auto geo = frameGeometry();
 //    WId win = winId();
-//    KWindowSystem::setStrut(win, geo.left(), geo.right(), geo.bottom() + mHeight, geo.bottom());
+//    int top = mPosition == "Top" ? mHeight + 2 : 0;
+//    int bottom = mPosition == "Bottom" ? mHeight + 2 : 0;
+//    KWindowSystem::setStrut(win, 0, 0, top, bottom);
 
     auto virtGeo = QApplication::screens()[mScreen]->virtualGeometry();
     WId win = winId();                //the id of the window
