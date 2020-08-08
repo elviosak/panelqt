@@ -81,6 +81,30 @@ void Clock::changeFrame(){
     setLineWidth(mLineWidth);
     setMidLineWidth(mMidLineWidth);
 };
+void Clock::mouseReleaseEvent(QMouseEvent *event){
+    Q_UNUSED(event);
+    if(event->button() == Qt::LeftButton){
+        showCalendar();
+    }
+    if(event->button() == Qt::RightButton){
+        showDialog();
+    }
+
+}
+void Clock::showCalendar(){
+    auto d = new QDialog(this,Qt::Popup);
+    auto box = new QVBoxLayout(d);
+    box->setMargin(0);
+    d->setLayout(box);
+    auto calendar = new QCalendarWidget(d);
+    box->addWidget(calendar);
+
+    auto center = geometry().center();
+    auto dialogGeo = mPanel->calculateMenuPosition(mapToGlobal(center), d->sizeHint(), 4, true);
+    d->setGeometry(dialogGeo);
+    calendar->setFocus();
+    d->show();
+}
 void Clock::showDialog(){
     QString dateTip =
         "DATE FORMAT STRING\n"\
@@ -209,13 +233,9 @@ void Clock::showDialog(){
     form->addRow(frameGroup);
 
 
-    //auto center = mapFromParent(geometry().center());
     auto center = geometry().center();
-    qDebug() << center;
-    auto dialogGeo = mPanel->calculateMenuPosition(center, dialog->sizeHint(), 4, false);
-    qDebug() << "menuGeo" << dialogGeo;
+    auto dialogGeo = mPanel->calculateMenuPosition(mapToGlobal(center), dialog->sizeHint(), 4, true);
     dialog->setGeometry(dialogGeo);
-    //connect(fontButton, QPushButton::textC)
     dialog->show();
 }
 void Clock::updateFont(){
@@ -261,34 +281,6 @@ void Clock::saveSettings(){
 void Clock::updateClock(){
     mDateLabel->setText(QDate::currentDate().toString(mDateFormat));
     mTimeLabel->setText(QTime::currentTime().toString(mTimeFormat));
-}
-void Clock::mousePressEvent(QMouseEvent *event){
-    Q_UNUSED(event);
-    showDialog();
-//    qDebug() << "menu requested";
-//    mMenu->clear();
-//    QAction * a;
-//    QBoxLayout::Direction dir = mLayout->direction();
-//    if( dir != QBoxLayout::LeftToRight){
-//        a = mMenu->addAction("Left To Right");
-//        connect(a, &QAction::triggered, this, [=]{mLayout->setDirection(QBoxLayout::LeftToRight);});
-//    }
-//    if( dir != QBoxLayout::RightToLeft){
-//        a = mMenu->addAction("Right To Left");
-//        connect(a, &QAction::triggered, this, [=]{mLayout->setDirection(QBoxLayout::RightToLeft);});
-//    }
-//    if( dir != QBoxLayout::TopToBottom){
-//        a = mMenu->addAction("Top To Bottom");
-//        connect(a, &QAction::triggered, this, [=]{mLayout->setDirection(QBoxLayout::TopToBottom);});
-//    }
-//    if( dir != QBoxLayout::BottomToTop){
-//        a = mMenu->addAction("Bottom To Top");
-//        connect(a, &QAction::triggered, this, [=]{mLayout->setDirection(QBoxLayout::BottomToTop);});
-//    }
-//    auto menuGeo = mPanel->calculateMenuPosition(event->globalPos(), mMenu->sizeHint());
-//    qDebug() << "menuGeo" << menuGeo;
-//    mMenu->setGeometry(menuGeo);
-//    mMenu->show();
 }
 
 void Clock::startTimer(){

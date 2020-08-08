@@ -23,7 +23,7 @@ public:
     QIcon mFallbackIcon;
 
     SNFrame * mFrame;
-    QMenu * mMenu;
+    bool mIsMenu;
 
     QMap<QString, IconProperty> statusToProp;
 

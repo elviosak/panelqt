@@ -3,6 +3,7 @@
 #include "panelqt.h"
 #include "sn/sniasync.h"
 #include <dbusmenu-qt5/dbusmenuimporter.h>
+
 #include <KWindowSystem>
 
 
@@ -24,6 +25,7 @@ protected:
 SNButton::SNButton(QString service, QString objectPath, SNFrame * frame)
     : QToolButton(frame),
       mFrame(frame),
+      mIsMenu(false),
       mStatus("Passive")
 {
     setAttribute(Qt::WA_NoMousePropagation);
@@ -48,7 +50,10 @@ SNButton::SNButton(QString service, QString objectPath, SNFrame * frame)
     mInterface->propertyGetAsync(QStringLiteral("Status"), [=] (QString s) {
         newStatus(s);
     });
-
+    mInterface->propertyGetAsync(QStringLiteral("ItemIsMenu"), [=] (bool isMenu) {
+        qDebug() << isMenu << service;
+        mIsMenu = isMenu;
+    });
     newTitle();
     statusToProp["Active"] = {"OverlayIconName", "OverlayIconPixmap"};
     statusToProp["NeedsAttention"] = {"AttentionIconName", "AttentionIconPixmap"};
@@ -63,7 +68,7 @@ SNButton::SNButton(QString service, QString objectPath, SNFrame * frame)
 }
 
 QAction* SNButton::configAction(){
-    QAction * a = new QAction("Status Notifier Settings");
+    QAction * a = new QAction(QIcon(":settings"), "Status Notifier Settings");
     connect(a, &QAction::triggered, mFrame, &SNFrame::showDialog);
     return a;
 }
@@ -76,7 +81,12 @@ void SNButton::changeButtonWidth(int w){
 void SNButton::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
-        mInterface->Activate(QCursor::pos().x(), QCursor::pos().y());
+        if(mIsMenu){
+            showMenu();
+        }
+        else{
+            mInterface->Activate(QCursor::pos().x(), QCursor::pos().y());
+        }
     else if (event->button() == Qt::MidButton)
         mInterface->SecondaryActivate(QCursor::pos().x(), QCursor::pos().y());
     else if (Qt::RightButton == event->button())
@@ -86,13 +96,13 @@ void SNButton::mouseReleaseEvent(QMouseEvent *event)
     QToolButton::mouseReleaseEvent(event);
 }
 void SNButton::createMenu(){
-    mInterface->propertyGetAsync(QLatin1String("Menu"), [=] (QDBusObjectPath path) {
-        if (!path.path().isEmpty())
-        {
-            mMenu = (new DBusMenuImporter(mInterface->service(), path.path(), this))->menu();
-            mMenu->setObjectName(QLatin1String("StatusNotifierMenu"));
-        }
-    });
+//    mInterface->propertyGetAsync(QLatin1String("Menu"), [=] (QDBusObjectPath path) {
+//        if (!path.path().isEmpty())
+//        {
+//            mMenu = (new DBusMenuImporter(mInterface->service(), path.path(), this))->menu();
+//            mMenu->setObjectName(QLatin1String("StatusNotifierMenu"));
+//        }
+//    });
 }
 void SNButton::showMenu(){
     mInterface->propertyGetAsync(QLatin1String("Menu"), [=] (QDBusObjectPath path) {
@@ -111,10 +121,22 @@ void SNButton::showMenu(){
                         m->addAction(a);
                     }
                 }
-                auto center = mapFromParent(geometry().center());
-                auto menuGeo = mFrame->mPanel->calculateMenuPosition(mapToGlobal(center), m->sizeHint(), 4, false);
-                m->setGeometry(menuGeo);
-                m->show();
+
+                QPoint pos;
+                if(mFrame->mPanel->mPosition == "Top"){
+                    pos = mapFromParent(geometry().bottomLeft());
+                    pos.setY(pos.y() + 4);
+                }else {
+                    pos = mapFromParent(geometry().topLeft());
+                    pos.setY(pos.y() - 4 - m->sizeHint().height());
+                }
+
+                m->popup(mapToGlobal(pos));
+
+//                auto center = mapFromParent(geometry().center());
+//                auto menuGeo = mFrame->mPanel->calculateMenuPosition(mapToGlobal(center), m->sizeHint(), 4, true);
+//                m->setGeometry(menuGeo);
+//                m->show();
             });
             importer->updateMenu();
         }
@@ -225,6 +247,7 @@ void SNButton::newStatus(QString s){
 }
 void SNButton::newTitle(){
     mInterface->propertyGetAsync(QStringLiteral("Title"), [this] (QString title) {
+        qDebug() << "title" << title;
         mTitle = title;
         setToolTip(mTitle);
     });

@@ -9,6 +9,7 @@
 class AppMenu;
 class TaskBar;
 class SNFrame;
+class VolumeFrame;
 class Clock;
 
 class PanelQt : public QFrame
@@ -21,6 +22,7 @@ public:
 
     QSettings * mSettings;
     QString mPanelName;
+    QStringList mAllPlugins;
     QStringList mPlugins;
     QRect mGeometry;
     QColor mBackgroundColor;
@@ -36,12 +38,18 @@ public:
     QString mShadow;
     int mLineWidth;
     int mMidLineWidth;
+    int mWidthPercentage;
+    QString mAlignment;
 
-    AppMenu * mAppMenu;
-    TaskBar * mTaskBar;
-    SNFrame * mSNFrame;
-    Clock * mClock;
+    QFrame * mSpacerLeft = nullptr;
+    AppMenu * mAppMenu = nullptr;
+    TaskBar * mTaskBar = nullptr;
+    SNFrame * mSNFrame = nullptr;
+    VolumeFrame * mVolumeFrame = nullptr;
+    Clock * mClock = nullptr;
+    QFrame * mSpacerRight = nullptr;
 
+    void addRemovePlugin(QString plugin, bool add);
     void changeShape(QString s);
     void changeShadow(QString s);
     void changeLineWidth(int w);
@@ -53,7 +61,10 @@ public:
     void setPanelScreen(int screen);
     void setPanelPosition(QString p);
     void setPanelHeight(int h);
+    void setPanelAlignment(QString a);
+    void setWidthPercentage(int w);
     void updatePanelGeometry();
+    void updatePanelGeometryAndStrut();
 
     void paintEvent(QPaintEvent * event);
     void setPanelOpacity(int o);
@@ -63,7 +74,7 @@ public:
     void reset();
     void loadSettings();
     void addPlugin();
-    QRect calculateMenuPosition(QPoint pos, QSize size, int gap = 2, bool isGlobal = true, float hScale = 1, float vScale = 1);
+    QRect calculateMenuPosition(QPoint pos, QSize size, int gap = 2, bool isGlobal = true, float hScale = 1, float vScale = 1, QString anchor = "Center");
     void mousePressEvent(QMouseEvent * event);
     void showDialog(QPoint pos);
 

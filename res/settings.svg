@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="icon" width="48" height="48" viewBox="0 0 48 48" stroke-width="4" stroke="#069" fill="none" stroke-linecap="" stroke-linejoin="round">
+
+<circle cx="24" cy="24" r="10" stroke-width="10"/>
+<path d="M11,11 l4,4 M37 37 l-4,-4
+			M24 6 v4 M24 42 v-4
+			M6 24 h4 M42 24 h-4
+			M37 11 l-4,4  M11 37 l4,-4" stroke-width="8"/>
+
+</svg>

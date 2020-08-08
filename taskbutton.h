@@ -18,7 +18,7 @@ class TaskButton : public QFrame
     Q_OBJECT
     Q_ENUM(TilePosition)
 public:
-    TaskButton(WId id, QIcon icon, QString title, QString className, QActionGroup * actionGroup, TaskGroup * group, TaskBar * taskbar, PanelQt * panel);
+    TaskButton(WId id, QIcon icon, QString title, QString className, TaskGroup * group, TaskBar * taskbar, PanelQt * panel);
     ~TaskButton();
 
     QString mClass;
@@ -46,7 +46,7 @@ public:
     void activeWindowChanged(WId id);
     void setActive(bool active);
 
-    void updateIconSize(int height);
+    void changeIconSize(int height);
     void changeIcon(QIcon i);
     void changeText(QString t);
 

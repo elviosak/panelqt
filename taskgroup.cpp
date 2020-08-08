@@ -19,7 +19,6 @@ TaskGroup::TaskGroup(QString className, QIcon icon, TaskBar* taskbar, PanelQt * 
     mCmd(cmd),
     mWindowCount(0),
     mLayout(new QHBoxLayout(this)),
-    mActionGroup(taskbar->mActionGroup),
     mPinButton(new PinButton(mIcon, mClassName, this, mTaskBar, mPanel))
 {
     setAttribute(Qt::WA_NoMousePropagation);
@@ -38,7 +37,7 @@ TaskGroup::TaskGroup(QString className, QIcon icon, TaskBar* taskbar, PanelQt * 
     mLayout->setMargin(0);
     mLayout->setSpacing(0);
     mLayout->setAlignment(Qt::AlignmentFlag::AlignLeft);
-    setLayout(mLayout);
+    //setLayout(mLayout);
 
     mLayout->addWidget(mPinButton);
     changeFrame();
@@ -123,7 +122,7 @@ void TaskGroup::setActive(WId id){
 
 void TaskGroup::addWindow(WId id, QString title, QIcon icon){
     if(!mWinList.contains(id)){
-        auto btn = new TaskButton(id, icon, title, mClassName, mActionGroup, this, mTaskBar, mPanel);
+        auto btn = new TaskButton(id, icon, title, mClassName, this, mTaskBar, mPanel);
         mLayout->addWidget(btn, 1);
         //addWidget(btn);
         mWinList[id] = btn;

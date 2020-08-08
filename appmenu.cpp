@@ -2,6 +2,7 @@
 #include "appmenu.h"
 #include "panelqt.h"
 
+
 AppMenu::AppMenu(PanelQt * panel)
     :QToolButton(panel),
     mSettings(new QSettings("PanelQt", panel->mPanelName + "/appmenu")),
@@ -54,14 +55,26 @@ AppMenu::AppMenu(PanelQt * panel)
     mWhichIcon = mSettings->value("whichIcon", "Default").toString();
     mIconName = mSettings->value("iconName", "").toString();
     mIconPath = mSettings->value("iconPath", "").toString();
-
+    mTerminalCommand = mSettings->value("terminalCommand", "qterminal -e").toString();
     mIconSize = mSettings->value("iconSize", mPanel->mHeight).toInt();
     mButtonWidth = mSettings->value("buttonWidth", 50).toInt();
 
     mDefaultIcon = QIcon(":/menu");
     mIconQSize = QSize(mIconSize, mIconSize);
 
-    //setCheckable(true);
+
+
+    mDefaultSystemActions = {
+        {"Log Out", "system-log-out", "lxqt-leave --logout", true},
+        {"Lock Screen", "system-lock-screen", "lxqt-leave --lockscreen", true},
+        {"Suspend", "system-suspend", "lxqt-leave --suspend", true},
+        {"Hibernate", "system-suspend-hibernate","lxqt-leave --hibernate", false},
+        {"Reboot", "system-reboot", "lxqt-leave --reboot", true},
+        {"Shutdown", "system-shutdown", "lxqt-leave --shutdown", true}
+    };
+
+    loadSystemActions();
+
     setAutoRaise(true);
 
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -75,8 +88,66 @@ AppMenu::AppMenu(PanelQt * panel)
     mCategoryMap = categorizeEntries();
     createDialog();
 
-    connect(this, &QToolButton::clicked, this, &AppMenu::showDialog);
+    connect(this, &QToolButton::clicked, this, &AppMenu::toggleMenu);
     connect(mDialog, &QDialog::finished, this, &AppMenu::dialogClosed);
+
+    //Register DBus Interface
+    QString mService = QLatin1String("org.panelqt.");
+    mService.append(mPanel->mPanelName);
+    bool conn = QDBusConnection::sessionBus().isConnected();
+    if(!conn) {
+        qDebug() << "AppMenu: failed to find DBus connection";
+    } else{
+        bool regService = QDBusConnection::sessionBus().registerService(mService);
+        if(!regService){
+            qDebug() << "AppMenu: failed to register DBus service:" << mService << qPrintable(QDBusConnection::sessionBus().lastError().message());
+        }else{
+            bool regObject = QDBusConnection::sessionBus().registerObject("/", this, QDBusConnection::ExportAllSlots);
+            if(!regObject) qDebug() << "AppMenu: failed to register DBus object"
+                                    << qPrintable(QDBusConnection::sessionBus().lastError().message());;
+        }
+    }
+}
+void AppMenu::loadSystemActions(){
+   // mListSystemActions = mSettings->value("listSystemActions", QStringList(mDefaultSystemActions.keys())).toStringList();
+    for(auto a : mDefaultSystemActions){
+        CustomAction ac;
+        mSettings->beginGroup("System-" + a.Name);
+        ac.Name = mSettings->value("name", a.Name).toString();
+        ac.Icon = mSettings->value("icon", a.Icon).toString();
+        ac.Exec = mSettings->value("exec", a.Exec).toString();
+        ac.Enabled = mSettings->value("enabled", a.Enabled).toBool();
+        mSettings->endGroup();
+        mSystemActions.append(ac);
+    }
+}
+void AppMenu::changeSystemActions(){
+    qDebug() << "saving actions";
+    //mSettings->setValue("listSystemActions", mListSystemActions);
+    for(auto a : mSystemActions){
+        mSettings->beginGroup("System-" + a.Name);
+        mSettings->setValue("name", a.Name);
+        mSettings->setValue("icon", a.Icon);
+        mSettings->setValue("exec", a.Exec);
+        mSettings->setValue("enabled", a.Enabled);
+        mSettings->endGroup();
+    }
+    createDialog();
+}
+void AppMenu::toggleMenu(){
+    //Q_UNUSED(t);
+    if(mDialog->isVisible()){
+        mDialog->hide();
+        mSearchEdit->setText("");
+        //return false;
+    } else {
+        auto center = geometry().topLeft();
+        auto geo = mPanel->calculateMenuPosition(center, mDialog->sizeHint(), 4, false, mHScale, mVScale, "Left");
+        mDialog->setGeometry(geo);
+        mDialog->show();
+        mSearchEdit->setFocus();
+        //return true;
+    }
 }
 void AppMenu::contextMenuEvent(QContextMenuEvent *event){
     Q_UNUSED(event);
@@ -84,16 +155,18 @@ void AppMenu::contextMenuEvent(QContextMenuEvent *event){
 }
 void AppMenu::showConfig(){
     auto d = new QDialog(this, Qt::Popup);
-    auto form = new QFormLayout(d);
-    d->setLayout(form);
+    connect(d, &QDialog::finished, this, &AppMenu::changeSystemActions);
+    auto hbox = new QHBoxLayout(d);
 
     auto generalGroup = new QGroupBox("AppMenu Settings:", d);
     auto generalForm = new QFormLayout(generalGroup);
-    generalGroup->setLayout(generalForm);
 
     auto showActionsCheck = new QCheckBox(d);
     auto hScaleSpin = new QDoubleSpinBox(d);
     auto vScaleSpin = new QDoubleSpinBox(d);
+    auto terminalCommandEdit = new QLineEdit(d);
+
+
     showActionsCheck->setChecked(mShowAllActions);
     hScaleSpin->setMinimumWidth(60);
     hScaleSpin->setRange(1, 2);
@@ -102,16 +175,56 @@ void AppMenu::showConfig(){
     vScaleSpin->setRange(1, 2);
     vScaleSpin->setValue(mVScale);
     vScaleSpin->setSingleStep(0.05);
+    terminalCommandEdit->setText(mTerminalCommand);
+
     connect(showActionsCheck, &QCheckBox::toggled, this, &AppMenu::changeShowAllActions);
     connect(hScaleSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &AppMenu::changeHScale);
     connect(vScaleSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &AppMenu::changeVScale);
+    connect(terminalCommandEdit, &QLineEdit::textChanged, this, &AppMenu::changeTerminalCommand);
+
     generalForm->addRow("Show all actions:", showActionsCheck);
     generalForm->addRow("Horizontal scale:", hScaleSpin);
     generalForm->addRow("Vertical scale:", vScaleSpin);
+    generalForm->addRow("Command for terminal apps:", terminalCommandEdit);
+
+    hbox->addWidget(generalGroup);
+
+    auto systemGroup = new QGroupBox("System Actions:", d);
+    auto systemForm = new QFormLayout(systemGroup);
+
+    for(int i = 0; i < mSystemActions.count(); ++i){
+        auto actionsGroup = new QGroupBox(mSystemActions[i].Name, systemGroup);
+        actionsGroup->setCheckable(true);
+        auto actionsForm = new QFormLayout(actionsGroup);
+
+        auto actionIconEdit = new QLineEdit(mSystemActions[i].Icon);
+        auto actionExecEdit = new QLineEdit(mSystemActions[i].Exec);
+        actionsForm->addRow("Icon:", actionIconEdit);
+        actionsForm->addRow("Exec", actionExecEdit);
+        connect(actionsGroup, &QGroupBox::toggled, this, [=](bool checked){
+            actionIconEdit->setEnabled(checked);
+            actionExecEdit->setEnabled(checked);
+            mSystemActions[i].Enabled = checked;
+            qDebug() << "toggled";
+            //changeSystemActions();
+        });
+        connect(actionIconEdit, &QLineEdit::textChanged, this, [=](QString text){
+            mSystemActions[i].Icon = text;
+            //changeSystemActions();
+        });
+        connect(actionExecEdit, &QLineEdit::textChanged, this, [=](QString text){
+            mSystemActions[i].Exec = text;
+            //changeSystemActions();
+        });
+        actionsGroup->setChecked(mSystemActions[i].Enabled);
+        systemForm->addRow(actionsGroup);
+    }
+
+    hbox->addWidget(systemGroup);
+
 
     auto categoriesGroup = new QGroupBox("Show Categories:");
     auto categoriesForm = new QFormLayout(categoriesGroup);
-    categoriesGroup->setLayout(categoriesForm);
 
     for (auto i = mOrderedCategories.begin(); i != mOrderedCategories.end(); ++i){
         auto catCheck = new QCheckBox(categoriesGroup);
@@ -120,13 +233,17 @@ void AppMenu::showConfig(){
         categoriesForm->addRow(i.key(), catCheck);
     }
 
-    form->addRow(generalGroup, categoriesGroup);
+    hbox->addWidget(categoriesGroup);
 
     auto center = geometry().center();
     auto geo = mPanel->calculateMenuPosition(center, d->sizeHint(), 4, false);
     d->setGeometry(geo);
     d->show();
     mSearchEdit->setFocus();
+}
+void AppMenu::changeTerminalCommand(QString cmd){
+    mTerminalCommand = cmd;
+    mSettings->setValue("terminalCommand", cmd);
 }
 void AppMenu::changeShowAllActions(bool s){
     mShowAllActions = s;
@@ -223,6 +340,10 @@ void AppMenu::showMenu(){
 }
 void AppMenu::launch(Entry e){
     QString Exec = e.Exec;
+    if(e.Terminal){
+        QString TerminalCommand = mTerminalCommand.isEmpty() ? "qterminal -e" : mTerminalCommand;
+        Exec = TerminalCommand + " " + Exec;
+    }
 #if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
     QStringList splitCmd = QProcess::splitCommand(Exec);
     qDebug()<< "launch" << e.Exec << splitCmd;
@@ -232,7 +353,16 @@ void AppMenu::launch(Entry e){
     QProcess::startDetached(exec);
 #endif
 }
+void AppMenu::launchCmd(QString cmd){
+    QString Exec = cmd;
+#if (QT_VERSION >= QT_VERSION_CHECK(5,15,0))
+    QStringList splitCmd = QProcess::splitCommand(Exec);
+    QProcess::startDetached(splitCmd.takeFirst(), splitCmd);
 
+#else
+    QProcess::startDetached(exec);
+#endif
+}
 QHash<QString, QList<Entry>> AppMenu::categorizeEntries(){
     QHash<QString, QList<Entry>> categoryMap;
     for (auto e: mEntries){
@@ -308,6 +438,7 @@ QList<Entry> AppMenu::findEntries(){
                         entry.Path = s.value(pre+"Path", "").toString();
                         entry.Icon = s.value(pre+"Icon", "").toString();
                         entry.StartupWMClass = s.value(pre+"StartupWMClass", "").toString();
+                        entry.Terminal = s.value(pre+"Terminal", false).toBool();
                         entry.OnlyShowIn = s.value(pre+"OnlyShowIn", "").toString().split(";", Qt::SkipEmptyParts);
                         entry.Actions = s.value(pre+"Actions", "").toString().split(";", Qt::SkipEmptyParts);
                         QString catString = s.value(pre+"Categories", "").toString();
@@ -320,7 +451,7 @@ QList<Entry> AppMenu::findEntries(){
                                 ActionEntry action;
                                 pre = QString("Desktop Action %1").arg(ac) + "/";
                                 action.Name = s.value(pre+"Name", "").toString();
-                                action.Exec = s.value(pre+"Exec", "").toString();
+                                action.Exec = s.value(pre+"Exec", "").toString().replace(rx, "").trimmed();
                                 entry.ActionEntries.append(action);
                             }
                         }
@@ -338,8 +469,8 @@ void AppMenu::createDialog(){
 //    }
     mDialog = new QDialog(this, Qt::Popup);
     auto vbox = new QVBoxLayout(mDialog);
-    mDialog->setLayout(vbox);
-    auto box = new QHBoxLayout(mDialog);
+
+    auto box = new QHBoxLayout;
     box->setSpacing(0);
     vbox->addLayout(box);
 
@@ -350,13 +481,12 @@ void AppMenu::createDialog(){
     left->setSpacing(0);
     auto m = leftW->contentsMargins();
     leftW->setContentsMargins(m.left(), m.top(), 0, m.bottom());
-    leftW->setLayout(left);
+
     box->addWidget(leftW);
 
 
     auto rightW = new QWidget(mDialog);
     auto right = new QStackedLayout(rightW);
-    rightW->setLayout(right);
 
     box->addWidget(rightW);
     QActionGroup * categoryGroup = new QActionGroup(mDialog);
@@ -592,52 +722,83 @@ void AppMenu::createDialog(){
     listShortcut->setKey(QKeySequence(Qt::Key_Enter));
     listShortcut->setContext(Qt::WidgetShortcut);
     connect(listShortcut, &QShortcut::activated, searchList, [=]{
-        auto currentItem = searchList->currentItem();
-        if(currentItem){
-            searchList->scrollToTop();
-            launch(searchItems[currentItem]);
-            mDialog->reject();
+        if(searchList->count()>0){
+            auto currentItem = searchList->currentItem();
+            if(nullptr != currentItem){
+                searchList->scrollToTop();
+                launch(searchItems[currentItem]);
+                mDialog->reject();
+            }
         }
-
     });
     listShortcut = new QShortcut(searchList);
     listShortcut->setKey(QKeySequence(Qt::Key_Return));
     listShortcut->setContext(Qt::WidgetShortcut);
     connect(listShortcut, &QShortcut::activated, searchList, [=]{
-        auto currentItem = searchList->currentItem();
-        if(currentItem){
-            searchList->scrollToTop();
-            launch(searchItems[currentItem]);
-            mDialog->reject();
+        if(searchList->count()>0){
+            auto currentItem = searchList->currentItem();
+            if(nullptr != currentItem){
+                searchList->scrollToTop();
+                launch(searchItems[currentItem]);
+                mDialog->reject();
+            }
         }
-
     });
     listShortcut = new QShortcut(searchList);
     listShortcut->setKey(QKeySequence(Qt::Key_Space));
     listShortcut->setContext(Qt::WidgetShortcut);
     connect(listShortcut, &QShortcut::activated, searchList, [=]{
-        auto currentItem = searchList->currentItem();
-        if(currentItem){
-            searchList->scrollToTop();
-            launch(searchItems[currentItem]);
-            mDialog->reject();
+        if(searchList->count()>0){
+            auto currentItem = searchList->currentItem();
+            if(nullptr != currentItem){
+                searchList->scrollToTop();
+                launch(searchItems[currentItem]);
+                mDialog->reject();
+            }
         }
-
     });
     right->addWidget(searchList);
 
     //////
     auto tool = new QToolBar;
     tool->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    //        0 Name;
+    //        1 Icon;
+    //        2 Exec;
+    //        3 Enabled;
+    for (auto customAction: mSystemActions){
+        if(customAction.Enabled){
+            QString iconString = customAction.Icon;
+            QIcon icon = QIcon::fromTheme(iconString);
+            if(icon.isNull()){
+                if(QFile::exists(iconString)){
+                    icon = QIcon(iconString);
+                }
+                else {
+                    icon = QIcon::fromTheme("application-x-desktop");
+                }
+            }
 
-    a = new QAction(QIcon::fromTheme("system-log-out"), "Log Off");
-    tool->addAction(a);
-    a = new QAction(QIcon::fromTheme("system-suspend"), "Suspend");
-    tool->addAction(a);
-    a = new QAction(QIcon::fromTheme("system-reboot"), "Restart");
-    tool->addAction(a);
-    a = new QAction(QIcon::fromTheme("system-shutdown"), "Shutdown");
-    tool->addAction(a);
+//            if(QIcon::hasThemeIcon(customAction.Icon)){
+//                icon = QIcon::fromTheme(customAction.Icon);
+//            }else {
+//                if(QFile::exists(customAction.Icon)){
+//                    icon = QIcon(customAction.Icon);
+//                }
+//            }
+            a = new QAction(icon, customAction.Name);
+            connect(a, &QAction::triggered, this, [=] {launchCmd(customAction.Exec);});
+            tool->addAction(a);
+        }
+    }
+//    a = new QAction(QIcon::fromTheme("system-log-out"), "Log Off");
+//    tool->addAction(a);
+//    a = new QAction(QIcon::fromTheme("system-suspend"), "Suspend");
+//    tool->addAction(a);
+//    a = new QAction(QIcon::fromTheme("system-reboot"), "Restart");
+//    tool->addAction(a);
+//    a = new QAction(QIcon::fromTheme("system-shutdown"), "Shutdown");
+//    tool->addAction(a);
     searchBox->addWidget(tool);
 
     connect(searchList, &QListWidget::itemEntered, this, [=](QListWidgetItem * item){
@@ -695,12 +856,14 @@ void AppMenu::createDialog(){
     s->setKey(QKeySequence(Qt::Key_Enter));
     s->setContext(Qt::WidgetShortcut);
     connect(s, &QShortcut::activated, mSearchEdit, [=]{
-        auto currentItem = searchList->currentItem();
-        qDebug() << "Enter" << currentItem->text() << searchItems[currentItem].Name <<searchItems[currentItem].Exec;
-        if(currentItem){
-            searchList->scrollToTop();
-            launch(searchItems[currentItem]);
-            mDialog->reject();
+        if(searchList->count()>0){
+            auto currentItem = searchList->currentItem();
+            qDebug() << "Enter" << currentItem->text() << searchItems[currentItem].Name <<searchItems[currentItem].Exec;
+            if(nullptr != currentItem){
+                searchList->scrollToTop();
+                launch(searchItems[currentItem]);
+                mDialog->reject();
+            }
         }
 
     });
@@ -708,12 +871,14 @@ void AppMenu::createDialog(){
     s->setKey(QKeySequence(Qt::Key_Return));
     s->setContext(Qt::WidgetShortcut);
     connect(s, &QShortcut::activated, mSearchEdit, [=]{
-        auto currentItem = searchList->currentItem();
-        qDebug() << "Enter" << currentItem->text() << searchItems[currentItem].Name <<searchItems[currentItem].Exec;
-        if(currentItem){
-            searchList->scrollToTop();
-            launch(searchItems[currentItem]);
-            mDialog->reject();
+        if(searchList->count()>0){
+            auto currentItem = searchList->currentItem();
+            qDebug() << "Enter" << currentItem->text() << searchItems[currentItem].Name <<searchItems[currentItem].Exec;
+            if(nullptr != currentItem){
+                searchList->scrollToTop();
+                launch(searchItems[currentItem]);
+                mDialog->reject();
+            }
         }
 
     });

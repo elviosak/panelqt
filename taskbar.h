@@ -91,6 +91,7 @@ public:
     void recalculateButtons();
     void removeGroup(QString className);
     void swapGroups(QObject * sender, QObject * draggedObj);
+    QGroupBox * createTaskBarConfig(QWidget* parent = nullptr);
 private:
     void activeWindowChanged(WId id);
     void windowRemoved(WId id);

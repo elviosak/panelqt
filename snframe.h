@@ -15,7 +15,7 @@ class SNFrame : public QFrame
     Q_OBJECT
 public:
     SNFrame(PanelQt * panel);
-
+    ~SNFrame();
     QString mPanelName;
     QSettings * mSettings;
     PanelQt * mPanel;
@@ -46,6 +46,7 @@ public:
     void onItemAdded(const QString &serviceAndPath);
     void onItemRemoved(const QString &serviceAndPath);
 
+    void mouseReleaseEvent(QMouseEvent * event) override;
 signals:
     void SNIconSizeChanged(int s);
     void SNButtonWidthChanged(int w);

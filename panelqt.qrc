@@ -1,5 +1,11 @@
 <RCC>
     <qresource prefix="/">
         <file alias="menu">res/menu.svg</file>
+        <file alias="tile-center1">res/tile-center1.svg</file>
+        <file alias="tile-left1">res/tile-left1.svg</file>
+        <file alias="tile-left2">res/tile-left2.svg</file>
+        <file alias="tile-right1">res/tile-right1.svg</file>
+        <file alias="tile-right2">res/tile-right2.svg</file>
+        <file alias="settings">res/settings.svg</file>
     </qresource>
 </RCC>

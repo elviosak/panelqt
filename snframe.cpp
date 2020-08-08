@@ -5,7 +5,9 @@
 
 extern QHash<QString, QFrame::Shape> Shapes;
 extern QHash<QString, QFrame::Shadow> Shadows;
-
+SNFrame::~SNFrame(){
+    delete mWatcher;
+}
 SNFrame::SNFrame(PanelQt * panel)
     : QFrame(panel),
       mPanelName(panel->mPanelName),
@@ -13,24 +15,27 @@ SNFrame::SNFrame(PanelQt * panel)
       mPanel(panel),
       mLayout(new QHBoxLayout(this))
 {
+    setAttribute(Qt::WA_NoMousePropagation);
     mIconSize = mSettings->value("iconSize", 24).toInt();
     mButtonWidth = mSettings->value("buttonWidth", 30).toInt();
 
-    mShape = mSettings->value("shape", "StyledPanel").toString();
+    mShape = mSettings->value("shape", "Box").toString();
     mShadow = mSettings->value("shadow", "Raised").toString();
     mLineWidth = mSettings->value("lineWidth", 1).toInt();
     mMidLineWidth = mSettings->value("midLineWidth", 1).toInt();
 
-    setLayout(mLayout);
+    //setLayout(mLayout);
     mLayout->setMargin(0);
     mLayout->setSpacing(0);
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
+    //qsetSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
 
     changeFrame();
 
     // Watcher stuff
     static int count = 0;
     QString dbusName = QString("org.kde.StatusNotifierHost-%1-%2").arg(QCoreApplication::applicationPid()).arg(count++);
+    //QString dbusName = QString("org.kde.StatusNotifierHost-1");
     if (!QDBusConnection::sessionBus().registerService(dbusName))
         qDebug() << QDBusConnection::sessionBus().lastError().message();
 
@@ -53,6 +58,16 @@ void SNFrame::changeButtonWidth(int w){
     mSettings->setValue("buttonWidth", w);
     emit SNButtonWidthChanged(w);
 }
+void SNFrame::mouseReleaseEvent(QMouseEvent *event){
+    Q_UNUSED(event);
+    if(event->button() == Qt::RightButton){
+        showDialog();
+        event->accept();
+        return;
+    }
+    event->ignore();
+
+}
 void SNFrame::showDialog(){
     auto dialog = new QDialog(this, Qt::Popup);
     dialog->setWindowTitle("Status Notifier Settings");
@@ -74,8 +89,8 @@ void SNFrame::showDialog(){
     form->addRow("Button width:", buttonWidthSpin);
 
     auto frameGroup = new QGroupBox("Frame Config", dialog);
-    auto frameForm =new QFormLayout(dialog);
-    frameGroup->setLayout(frameForm);
+    auto frameForm =new QFormLayout(frameGroup);
+
 
     auto frameShapeCombo = new QComboBox(dialog);
     auto frameShadowCombo = new QComboBox(dialog);

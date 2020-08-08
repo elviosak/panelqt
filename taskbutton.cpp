@@ -10,7 +10,7 @@
 
 TaskButton::~TaskButton(){}
 
-TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, QActionGroup * actionGroup, TaskGroup * group, TaskBar * taskbar, PanelQt * panel):
+TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, TaskGroup * group, TaskBar * taskbar, PanelQt * panel):
     QFrame(group),
     mClass(className),
     mPinned(false),
@@ -21,22 +21,20 @@ TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, QAc
     mTaskBar(taskbar),
     mPanel(panel),
     mActive(KWindowSystem::activeWindow() == mId)
-    //mAction(actionGroup->addAction(new QAction(panel)))
-
 {
-    auto box = new QHBoxLayout;
+    auto box = new QHBoxLayout(this);
     box->setMargin(0);
     box->setSpacing(0);
-    setLayout(box);
+    //setLayout(box);
     auto innerFrame = new QFrame;
     innerFrame->setFrameShape(Shape::NoFrame);
     box->addSpacing(2);
     box->addWidget(innerFrame);
-    auto hbox = new QHBoxLayout();
+    auto hbox = new QHBoxLayout(innerFrame);
     hbox->setDirection(QBoxLayout::LeftToRight);
     hbox->setMargin(0);
     hbox->setSpacing(0);
-    innerFrame->setLayout(hbox);
+    //innerFrame->setLayout(hbox);
     mBtnIcon = new QLabel;
     mBtnText = new QLabel;
 
@@ -44,8 +42,8 @@ TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, QAc
 
 
 
-    hbox->addWidget(mBtnIcon);//,1, Qt::AlignVCenter);
-    hbox->addWidget(mBtnText);//,10, Qt::AlignVCenter);
+    hbox->addWidget(mBtnIcon);
+    hbox->addWidget(mBtnText);
 
     changeIcon(mIcon);
     changeText(title);
@@ -55,32 +53,28 @@ TaskButton::TaskButton(WId id, QIcon icon, QString title, QString className, QAc
     setActive(mActive);
 
     setAccessibleName(className);
-    //mAction->setCheckable(true);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
     setFocusPolicy(Qt::NoFocus);
     setAcceptDrops(true);
 
-    connect(mTaskBar, &TaskBar::iconHeightChanged, this, &TaskButton::updateIconSize);
+    connect(mTaskBar, &TaskBar::iconHeightChanged, this, &TaskButton::changeIconSize);
     connect(KWindowSystem::self(), &KWindowSystem::activeWindowChanged, this, &TaskButton::activeWindowChanged);
     connect(mTaskBar, &TaskBar::buttonWidthChanged, this, &TaskButton::buttonWidthChanged);
-    //connect(mAction, &QAction::triggered, this, &TaskButton::actionClicked);
 }
 void TaskButton::paintEvent(QPaintEvent *event){
+//    if(mPaletteColor == QPalette::Window)
+//        return;
+
     QPainter painter(this);
     QColor color(palette().color(mPaletteColor));
     color.setAlpha(mPanel->mOpacity);
     painter.fillRect(event->rect(), color);
 }
 void TaskButton::leaveEvent(QEvent *e){
-    qDebug() << "hover leave";
-    //setBackgroundRole(QPalette::Window);
     setActive(mActive);
-    //mBtnText->setStyle(mActive ? mTaskBar->mElideLabelUnderline : mTaskBar->mElideLabel);
     e->accept();
 }
 void TaskButton::enterEvent(QEvent *e){
-    qDebug() << "hover enter";
-    //setBackgroundRole(QPalette::Light);
     mPaletteColor = QPalette::Light;
     repaint();
     e->accept();
@@ -92,7 +86,6 @@ void TaskButton::activeWindowChanged(WId id){
 void TaskButton::changeIcon(QIcon icon){
     if (!icon.isNull()){
         QSize size = QSize(mTaskBar->mIconHeight, mTaskBar->mIconHeight);
-        //mBtnIcon->setMinimumWidth(mTaskBar->mIconHeight);
         mBtnIcon->setPixmap(mIcon.pixmap(size));
         mIcon = icon;
     }
@@ -100,7 +93,6 @@ void TaskButton::changeIcon(QIcon icon){
 void TaskButton::changeText(QString t){
     mTitle = t;
     mBtnText->setText(t);
-    //mBtnText->setMaximumWidth(sizeHint().width()-mTaskBar->mIconHeight);
 }
 void TaskButton::setActive(bool active){
     mActive = active;
@@ -108,23 +100,19 @@ void TaskButton::setActive(bool active){
         setFrameShape(Shape::StyledPanel);
         setFrameShadow(Shadow::Sunken);
         mBtnText->setStyle(mTaskBar->mElideLabelUnderline);
-        //setBackgroundRole(QPalette::Base);
         mPaletteColor = QPalette::Base;
     }else {
         setFrameShape(Shape::StyledPanel);
         setFrameShadow(Shadow::Raised);
         mBtnText->setStyle(mTaskBar->mElideLabel);
-        //setBackgroundRole(QPalette::Button);
         mPaletteColor = QPalette::Window;
     }
     repaint();
 }
 
-void TaskButton::updateIconSize(int h){
+void TaskButton::changeIconSize(int h){
     QSize size = QSize(h, h);
-    //mAction->setIcon(mIcon.pixmap(size).scaled(size));
     mBtnIcon->setPixmap(mIcon.pixmap(size).scaled(size));
-    //updateGeometry();
 }
 void TaskButton::actionClicked(bool checked){
     qDebug() << "checked" << checked;
@@ -144,8 +132,6 @@ void TaskButton::setActionCheck(bool check){
     setActive(check);
 }
 void TaskButton::buttonWidthChanged(int w){
-    //qDebug() << "buttonWidthChanged" << mId << w;
-    //setMinimumWidth(w);
     setMaximumWidth(w - frameWidth());
     updateGeometry();
 }
@@ -211,7 +197,7 @@ void TaskButton::tileWindow(TilePosition pos, int perc){
     int height = screenGeo.height();
     int y = screenGeo.top();
 
-    int x;
+    int x = 0;
     if(pos==TilePosition::Left){
         x = screenGeo.left();
     }
@@ -231,7 +217,7 @@ void TaskButton::tileWindow(TilePosition pos, int perc){
 
     qDebug() << screenGeo << x<<y<<width<<height;
     //NET::States state = KWindowInfo(mId, NET::WMState).state();
-    //      NW geometry |     y/x        |  from panel
+    //      NW geometry |height/width/y/x|  from panel
     const int flags = 1 | (0b01111 << 8) | (0b010 << 12);
     KWindowSystem::clearState(mId, NET::MaxHoriz | NET::MaxVert | NET::Max | NET::FullScreen);
     NETRootInfo(QX11Info::connection(), NET::Properties(), NET::WM2MoveResizeWindow).moveResizeWindowRequest(mId, flags, x, y, width, height);
@@ -265,61 +251,94 @@ void TaskButton::mouseReleaseEvent(QMouseEvent *event){
     event->accept();
 }
 void TaskButton::showMenu(){
-    QMenu * menu = new QMenu(this);
+    QDialog * d = new QDialog(this, Qt::Popup);
+    auto box = new QHBoxLayout(d);
+    box->setMargin(0);
+    box->setSpacing(0);
+//    auto wid = new QWidget;
+//    auto geo = QApplication::screens()[mPanel->mScreen]->geometry();
+//    geo.moveTop(geo.top() + 500);
+//    qDebug() << "geo" << geo;
+//    wid->setGeometry(geo);
+//    wid->show();
+
+
+    QMenu * menu = new QMenu("Menu", d);
+    //box->addWidget(menu);
+
     QAction * a;
     // pin actions
     if(mGroup->mPinned){
-        a = menu->addAction(mIcon, QString("New Instance: %1").arg(mGroup->mCmd));
+        a = menu->addAction(mGroup->mIcon, QString("New Instance: %1").arg(mGroup->mCmd));
         connect(a, &QAction::triggered, mGroup, &TaskGroup::startPin);
 
-        a = menu->addAction(QString("Remove Pin"));
+        a = menu->addAction(QIcon::fromTheme("emblem-remove"), QString("Remove Pin"));
         connect(a, &QAction::triggered, mGroup, &TaskGroup::removePin);
     }else {
-        a = menu->addAction(QString("Add Pin"));
+        a = menu->addAction(QIcon::fromTheme("emblem-added"), QString("Add Pin"));
         connect(a, &QAction::triggered, mGroup, &TaskGroup::addPin);
     }
     menu->addSeparator();
 
     // taskbar
-    a = menu->addAction("Panel/TaskBar Settings");
+    a = menu->addAction(QIcon(":settings"), "Panel/TaskBar Settings");
     connect(a, &QAction::triggered, this, [=] {
         auto center = mapFromParent(geometry().center());
 
         mPanel->showDialog(mapToGlobal(center));
     });
     menu->addSeparator();
-    a = menu->addAction("Tile Left: 640 px");
+    a = menu->addAction(QIcon(":tile-left1"), "Tile Left: 640 px");
     connect(a, &QAction::triggered, this, [=]{
         tileWindow(TilePosition::Left, 640);
     });
-    a = menu->addAction("Tile Center: 640 px");
+    a = menu->addAction(QIcon(":tile-center1"), "Tile Center: 640 px");
     connect(a, &QAction::triggered, this, [=]{
         tileWindow(TilePosition::Center, 640);
     });
-    a = menu->addAction("Tile Right: 640 px");
+    a = menu->addAction(QIcon(":tile-right1"), "Tile Right: 640 px");
     connect(a, &QAction::triggered, this, [=]{
         tileWindow(TilePosition::Right, 640);
     });
     menu->addSeparator();
-    a = menu->addAction("Tile Left: 1280 px");
+    a = menu->addAction(QIcon(":tile-left2"), "Tile Left: 1280 px");
     connect(a, &QAction::triggered, this, [=]{
         tileWindow(TilePosition::Left, 1280);
     });
-    a = menu->addAction("Tile Right: 1280 px");
+    a = menu->addAction(QIcon(":tile-right2"), "Tile Right: 1280 px");
     connect(a, &QAction::triggered, this, [=]{
         tileWindow(TilePosition::Right, 1280);
     });
     menu->addSeparator();
-    a = menu->addAction("Close");
+    a = menu->addAction(QIcon::fromTheme("window-close"), "Close");
     connect(a, &QAction::triggered, this, &TaskButton::requestClose);
 
+//    box->addWidget(menu);
+//    auto btn = new QPushButton("btn");
+//    btn->setFlat(true);
+//    box->addWidget(btn);
 
+
+    //menu->show();
     //set menu position
-    auto center = mapFromParent(geometry().center());
-    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), menu->sizeHint(), 4, false);
+    QPoint pos;
+    if(mPanel->mPosition == "Top"){
+        pos = mapFromParent(geometry().bottomLeft());
+        pos.setY(pos.y() + 4);
+    }else {
+        pos = mapFromParent(geometry().topLeft());
+        pos.setY(pos.y() - 4 - menu->sizeHint().height());
+    }
+
+    menu->popup(mapToGlobal(pos));
+//    qDebug() << "menu" << menu->sizeHint();
+//    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), d->sizeHint(), 4, true);
+    //auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), menu->sizeHint(), 4, true);
 //    qDebug() << "geo" << center;
-    menu->setGeometry(menuGeo);
-    menu->show();
+   // d->setGeometry(menuGeo);
+    //menu->setGeometry(menuGeo);
+    //d->show();
+    //menu->show();
 }
 
 void TaskButton::requestClose(){

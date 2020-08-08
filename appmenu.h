@@ -2,6 +2,7 @@
 #define APPMENU_H
 
 #include <QtWidgets>
+#include <QtDBus>
 
 struct CategoryData{
     QString Name;
@@ -22,6 +23,7 @@ struct Entry {
     QString Path;
     QString Icon;
     QString StartupWMClass;
+    bool Terminal;
     QStringList OnlyShowIn;
     QStringList Actions;
     QStringList Categories;
@@ -31,6 +33,14 @@ struct Entry {
 Q_DECLARE_METATYPE(CategoryData)
 Q_DECLARE_METATYPE(ActionEntry)
 Q_DECLARE_METATYPE(Entry)
+struct CustomAction
+{
+    QString Name;
+    QString Icon;
+    QString Exec;
+    bool Enabled;
+};
+Q_DECLARE_METATYPE(CustomAction);
 
 
 class PanelQt;
@@ -53,12 +63,17 @@ public:
     QList<CategoryData> mDefaultCategories;
     QMap<QString,bool> mOrderedCategories;
 
+    QStringList mListSystemActions;
+    QList<CustomAction> mSystemActions;
+    QList<CustomAction> mDefaultSystemActions;
+    //QList<QStringList> mSystemActions;
     QHash<QString, QList<Entry>> mCategoryMap;
     QStringList mShownCategories;
     QList<Entry> mEntries;
     bool mShowAllActions;
-
+    QString mTerminalCommand;
     QIcon mDefaultIcon;
+
 
     double mHScale;
     double mVScale;
@@ -70,6 +85,9 @@ public:
 
     QSize mIconQSize;
 
+    void changeSystemActions();
+    void loadSystemActions();
+    void changeTerminalCommand(QString cmd);
     void changeShowAllActions(bool s);
     void changeShownCategories(QString s, bool add);
     void changeHScale(double s);
@@ -91,8 +109,10 @@ public:
     QHash<QString, QVariant> readDesktopFile(QString p);
 
     void contextMenuEvent(QContextMenuEvent *event) override;
-public slots:
     void launch(Entry e);
+    void launchCmd(QString cmd);
+public slots:
+    Q_NOREPLY void toggleMenu();
 };
 
 #endif // APPMENU_H

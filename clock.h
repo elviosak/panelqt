@@ -43,6 +43,7 @@ private:
     void changeFrame();
 
 
+    void showCalendar();
     void showDialog();
     void setUsePanelFont(bool usePanelFont);
     void setClockFont(QFont font);
@@ -55,7 +56,7 @@ private:
 
     void updateClock();
     void startTimer();
-    void mousePressEvent(QMouseEvent * event);
+    void mouseReleaseEvent(QMouseEvent * event) override;
     //void contextMenuEvent(QContextMenuEvent *event);
 };
 

@@ -33,10 +33,10 @@ TaskBar::TaskBar(PanelQt * panel):
     mPinAutoRaise = mSettings->value("pinAutoRaise", false).toBool();
     mButtonUnderline = mSettings->value("buttonUnderline", true).toBool();
 
-    mShape = mSettings->value("shape", "StyledPanel").toString();
-    mShadow = mSettings->value("shadow", "Raised").toString();
-    mLineWidth = mSettings->value("lineWidth", 1).toInt();
-    mMidLineWidth = mSettings->value("midLineWidth", 1).toInt();
+    mShape = mSettings->value("shape", "NoFrame").toString();
+    mShadow = mSettings->value("shadow", "Plain").toString();
+    mLineWidth = mSettings->value("lineWidth", 0).toInt();
+    mMidLineWidth = mSettings->value("midLineWidth", 0).toInt();
 
     mGroupShape = mGroupSettings->value("shape", "Box").toString();
     mGroupShadow = mGroupSettings->value("shadow", "Raised").toString();
@@ -55,7 +55,7 @@ TaskBar::TaskBar(PanelQt * panel):
     mLayout->setMargin(0);
     mLayout->setSpacing(2);
     mLayout->setAlignment(Qt::AlignmentFlag::AlignLeft);
-    setLayout(mLayout);
+    //setLayout(mLayout);
 
     changeFrame();
     setFrameShape(Shapes[mShape]);
@@ -76,6 +76,127 @@ TaskBar::TaskBar(PanelQt * panel):
     qDebug() << "telegram" << info.windowClassName() <<info.state();
 
 }
+QGroupBox * TaskBar::createTaskBarConfig(QWidget * parent){
+    //Taskbar config
+    auto taskbarGroup = new QGroupBox("TaskBar Settings", parent);
+    taskbarGroup->setObjectName("TaskBar Group");
+    auto grid = new QGridLayout(taskbarGroup);
+
+    auto generalGroup = new QGroupBox("General:", taskbarGroup);
+    auto generalForm = new QFormLayout(generalGroup);
+
+    auto showScreenCheck = new QCheckBox(taskbarGroup);
+    auto barShapeCombo = new QComboBox(taskbarGroup);
+    auto barShadowCombo = new QComboBox(taskbarGroup);
+    auto barLineSpin = new QSpinBox(taskbarGroup);
+    auto barMidLineSpin = new QSpinBox(taskbarGroup);
+
+    showScreenCheck->setChecked(mShowAllScreens);
+    barShapeCombo->addItems({"NoFrame", "Box", "Panel", "StyledPanel", "HLine", "VLine", "WinPanel"});
+    barShapeCombo->setCurrentText(mShape);
+    barShadowCombo->addItems({"Plain", "Raised", "Sunken"});
+    barShadowCombo->setCurrentText(mShadow);
+    barLineSpin->setRange(0,10);
+    barLineSpin->setValue(mLineWidth);
+    barMidLineSpin->setRange(0,10);
+    barMidLineSpin->setValue(mMidLineWidth);
+
+    connect(showScreenCheck,    &QCheckBox::toggled,                            this, &TaskBar::setShowAllScreens);
+    connect(barShapeCombo,      &QComboBox::currentTextChanged,                 this, &TaskBar::changeShape);
+    connect(barShadowCombo,     &QComboBox::currentTextChanged,                 this, &TaskBar::changeShadow);
+    connect(barLineSpin,        QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::changeLineWidth);
+    connect(barMidLineSpin,     QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::changeMidLineWidth);
+
+    generalForm->addRow("Show from all screens:", showScreenCheck);
+    generalForm->addRow("Shape:", barShapeCombo);
+    generalForm->addRow("Shadow:", barShadowCombo);
+    generalForm->addRow("Line Width:", barLineSpin);
+    generalForm->addRow("Mid Line Width:", barMidLineSpin);
+    grid->addWidget(generalGroup, 0, 0);
+
+    //////GROUP
+
+    auto groupGroup = new QGroupBox("Group:", taskbarGroup);
+    auto groupForm =new QFormLayout(groupGroup);
+
+    auto groupShapeCombo = new QComboBox(groupGroup);
+    auto groupShadowCombo = new QComboBox(groupGroup);
+    auto groupLineSpin = new QSpinBox(groupGroup);
+    auto groupMidLineSpin = new QSpinBox(groupGroup);
+
+    groupShapeCombo->addItems({"NoFrame", "Box", "Panel", "StyledPanel", "HLine", "VLine", "WinPanel"});
+    groupShapeCombo->setCurrentText(mGroupShape);
+    groupShadowCombo->addItems({"Plain", "Raised", "Sunken"});
+    groupShadowCombo->setCurrentText(mGroupShadow);
+    groupLineSpin->setRange(0,10);
+    groupLineSpin->setValue(mGroupLineWidth);
+    groupMidLineSpin->setRange(0,10);
+    groupMidLineSpin->setValue(mGroupMidLineWidth);
+
+    connect(groupShapeCombo,    &QComboBox::currentTextChanged,                 this, &TaskBar::groupChangeShape);
+    connect(groupShadowCombo,   &QComboBox::currentTextChanged,                 this, &TaskBar::groupChangeShadow);
+    connect(groupLineSpin,      QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::groupChangeLineWidth);
+    connect(groupMidLineSpin,   QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::groupChangeMidLineWidth);
+
+    groupForm->addRow("Shape:", groupShapeCombo);
+    groupForm->addRow("Shadow:", groupShadowCombo);
+    groupForm->addRow("Line Width:", groupLineSpin);
+    groupForm->addRow("Mid Line Width:", groupMidLineSpin);
+
+    grid->addWidget(groupGroup, 1, 0);
+
+    //////BUTTONS
+    auto buttonGroup = new QGroupBox("Button:", taskbarGroup);
+    auto buttonForm = new QFormLayout(buttonGroup);
+
+    auto maxBtnWidthSpin = new QSpinBox(taskbarGroup);
+    auto iconHeightSpin = new QSpinBox(taskbarGroup);
+    auto buttonUnderline = new QCheckBox(taskbarGroup);
+
+    maxBtnWidthSpin->setRange(50, 500);
+    maxBtnWidthSpin->setValue(mMaxBtnWidth);
+    maxBtnWidthSpin->setMinimumWidth(50);
+    iconHeightSpin->setRange(12,128);
+    iconHeightSpin->setValue(mIconHeight);
+    buttonUnderline->setChecked(mButtonUnderline);
+
+    buttonForm->addRow("Width:", maxBtnWidthSpin);
+    buttonForm->addRow("Icon size", iconHeightSpin);
+    buttonForm->addRow("Underline active button:", buttonUnderline);
+
+    connect(maxBtnWidthSpin,    QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::setMaxBtnWidth);
+    connect(iconHeightSpin,     QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::setIconHeight);
+    connect(buttonUnderline,    &QCheckBox::toggled,                            this, &TaskBar::setButtonUnderline);
+
+    grid->addWidget(buttonGroup, 0, 1);
+
+    ////////PINS
+    auto pinGroup = new QGroupBox("Pin:", taskbarGroup);
+    auto pinForm = new QFormLayout(pinGroup);
+
+    auto pinIconHeightSpin = new QSpinBox(taskbarGroup);
+    auto pinBtnWidthSpin = new QSpinBox(taskbarGroup);
+
+
+    pinIconHeightSpin->setRange(12,128);
+    pinIconHeightSpin->setValue(mPinIconHeight);
+    pinBtnWidthSpin->setRange(12,500);
+    pinBtnWidthSpin->setValue(mPinBtnWidth);
+
+
+    pinForm->addRow("Icon size:", pinIconHeightSpin);
+    pinForm->addRow("Width:", pinBtnWidthSpin);
+
+    connect(pinIconHeightSpin,  QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::setPinIconHeight);
+    connect(pinBtnWidthSpin,    QOverload<int>::of(&QSpinBox::valueChanged),    this, &TaskBar::setPinBtnWidth);
+
+
+    grid->addWidget(pinGroup, 1, 1);
+    return taskbarGroup;
+
+}
+
+
 void TaskBar::groupChangeShape(QString s){
     mGroupShape = s;
     mGroupSettings->setValue("shape", s);

@@ -38,6 +38,9 @@ PinButton::PinButton(QIcon icon, QString className, TaskGroup * group, TaskBar *
     connect(mTaskBar, &TaskBar::pinBtnWidthChanged, this, &PinButton::updatePinWidth);
 }
 void PinButton::paintEvent(QPaintEvent *event){
+//    if(mPaletteColor == QPalette::Window)
+//        return;
+
     QPainter painter(this);
     QColor color(palette().color(mPaletteColor));
     color.setAlpha(mPanel->mOpacity);
@@ -111,16 +114,27 @@ void PinButton::showMenu(){
     a = menu->addAction(mIcon, QString("New Instance: %1").arg(mGroup->mCmd));
     connect(a, &QAction::triggered, mGroup, &TaskGroup::startPin);
 
-    a = menu->addAction(QString("Remove Pin"));
+    a = menu->addAction(QIcon::fromTheme("emblem-remove"), QString("Remove Pin"));
     connect(a, &QAction::triggered, mGroup, &TaskGroup::removePin);
     menu->addSeparator();
 
 
     //set menu position
-    auto center = mapFromParent(geometry().center());
-    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), menu->sizeHint(), 4, false);
-//    qDebug() << "geo" << center;
-    menu->setGeometry(menuGeo);
-    menu->show();
+    QPoint pos;
+    if(mPanel->mPosition == "Top"){
+        pos = mapFromParent(geometry().bottomLeft());
+        pos.setY(pos.y() + 4);
+    }else {
+        pos = mapFromParent(geometry().topLeft());
+        pos.setY(pos.y() - 4 - menu->sizeHint().height());
+    }
+
+    menu->popup(mapToGlobal(pos));
+
+//    auto center = mapFromParent(geometry().center());
+//    auto menuGeo = mPanel->calculateMenuPosition(mapToGlobal(center), menu->sizeHint(), 4, true);
+////    qDebug() << "geo" << center;
+//    menu->setGeometry(menuGeo);
+//    menu->show();
 }
 

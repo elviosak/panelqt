@@ -19,7 +19,12 @@ SOURCES += \
     sn/statusnotifierwatcher.cpp \
     taskbar.cpp \
     taskbutton.cpp \
-    taskgroup.cpp
+    taskgroup.cpp \
+    vol/audiodevice.cpp \
+    vol/audioengine.cpp \
+    vol/pulseaudioengine.cpp \
+    volumebutton.cpp \
+    volumeframe.cpp
 
 HEADERS += \
     appmenu.h \
@@ -36,9 +41,17 @@ HEADERS += \
     taskbar.h \
     taskbutton.h \
     taskgroup.h \
-    toolbuttontextstyle.hpp
+    toolbuttontextstyle.hpp \
+    vol/audiodevice.h \
+    vol/audioengine.h \
+    vol/pulseaudioengine.h \
+    volumebutton.h \
+    volumeframe.h
 
-#LIBS += -L/usr/lib -ldbusmenu-qt5
+
+#LIBS += -lpulse-simple
+LIBS += -lpulse
+
 unix: CONFIG += link_pkgconfig
 unix: PKGCONFIG += dbusmenu-qt5
 
@@ -47,11 +60,15 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-DISTFILES += \
-    statusnotifier-extra/org.kde.StatusNotifierItem.xml
+#DISTFILES += \
+#    statusnotifier-extra/org.kde.StatusNotifierItem.xml
 
 RESOURCES += \
     panelqt.qrc
 
 
 
+
+
+
+unix:!macx: LIBS += -ldbusmenu-qt5

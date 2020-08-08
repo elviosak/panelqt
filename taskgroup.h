@@ -33,7 +33,6 @@ public:
     int mWindowCount;
     QMap<WId, TaskButton*> mWinList;
     QBoxLayout * mLayout;
-    QActionGroup * mActionGroup;
     PinButton * mPinButton;
     int mButtonWidth;
     int mGroupWidth;
