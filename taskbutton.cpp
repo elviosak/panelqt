@@ -223,7 +223,7 @@ void TaskButton::tileWindow(TilePosition pos, int perc){
     NETRootInfo(QX11Info::connection(), NET::Properties(), NET::WM2MoveResizeWindow).moveResizeWindowRequest(mId, flags, x, y, width, height);
     QTimer::singleShot(200, this, [this]
     {
-        KWindowSystem::setState(mId, NET::MaxVert);
+        //KWindowSystem::setState(mId, NET::MaxVert);
         KWindowSystem::raiseWindow(mId);
     });
 
