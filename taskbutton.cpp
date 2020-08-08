@@ -173,7 +173,7 @@ void TaskButton::moveApplicationToPrevNextMonitor(bool next)
         }
     }
 }
-void TaskButton::tileWindow(TilePosition pos, int perc){
+void TaskButton::tileWindow(TilePosition pos, int pixels){
 
     KWindowInfo info(mId, NET::WMFrameExtents | NET::WMGeometry | NET::WMState | NET::XAWMState);
     if (info.isMinimized())
@@ -181,36 +181,40 @@ void TaskButton::tileWindow(TilePosition pos, int perc){
     KWindowSystem::forceActiveWindow(mId);
 
     auto screen = QApplication::screens()[mPanel->mScreen];
-    auto screenGeo = screen->geometry();
+    auto screenGeo = screen->availableGeometry();
 
     int frameLeft = qAbs(info.frameGeometry().left() - info.geometry().left());
     int frameRight = qAbs(info.frameGeometry().right() - info.geometry().right());
     int frameTop = qAbs(info.frameGeometry().top() - info.geometry().top());
     int frameBottom = qAbs(info.frameGeometry().bottom() - info.geometry().bottom());
 
-    if(mPanel->mPosition == "Bottom"){
-        screenGeo.setBottom(screenGeo.bottom() - mPanel->mHeight);
-    }else if (mPanel->mPosition == "Top") {
-        screenGeo.setTop(screenGeo.top() + mPanel->mHeight);
+    if (screenGeo.isEmpty() || screenGeo == QRect(0, 0, 0, 0)){
+        qDebug() << "empty";
+        screenGeo = screen->geometry();
+        if (mPanel->mPosition == "Bottom"){
+            screenGeo.setBottom(screenGeo.bottom() - mPanel->mHeight - 2);
+        }else if (mPanel->mPosition == "Top") {
+            screenGeo.setTop(screenGeo.top() + mPanel->mHeight + 2);
+        }
     }
 
     int height = screenGeo.height();
     int y = screenGeo.top();
 
     int x = 0;
-    if(pos==TilePosition::Left){
+    if (pos == TilePosition::Left){
         x = screenGeo.left();
     }
-    if(pos== TilePosition::Center){
-        int leftWidth = (screenGeo.width() - perc)/2;
+    if (pos == TilePosition::Center){
+        int leftWidth = (screenGeo.width() - pixels) / 2;
         x = screenGeo.left() + leftWidth;
     }
-    if(pos==TilePosition::Right){
-        int leftWidth = screenGeo.width() - perc;
+    if (pos == TilePosition::Right){
+        int leftWidth = screenGeo.width() - pixels;
         x = screenGeo.left() + leftWidth;
     }
 
-    int width = perc - frameLeft - frameRight;
+    int width = pixels - frameLeft - frameRight;
     height = height - frameTop - frameBottom;
 
 

@@ -55,7 +55,7 @@ public:
     void leaveEvent(QEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *e) override;
     void dragEnterEvent(QDragEnterEvent *e) override;
-    void tileWindow(TilePosition pos, int perc);
+    void tileWindow(TilePosition pos, int pixels);
     void moveApplicationToPrevNextMonitor(bool next);
 private:
     void requestClose();
