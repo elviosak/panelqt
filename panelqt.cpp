@@ -61,6 +61,10 @@ PanelQt::PanelQt(QString panelName, QWidget *parent):
     connect(KWindowSystem::self(), &KWindowSystem::strutChanged, this, &PanelQt::updatePanelGeometry);
 }
 
+void PanelQt::showEvent(QShowEvent *e){
+    Q_UNUSED(e);
+    updatePanelGeometry();
+}
 void PanelQt::changeShape(QString s){
     mShape = s;
     mSettings->setValue("shape", s);

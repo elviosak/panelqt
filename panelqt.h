@@ -66,7 +66,7 @@ public:
     void updatePanelGeometry();
     void updatePanelGeometryAndStrut();
 
-    void paintEvent(QPaintEvent * event);
+    void paintEvent(QPaintEvent * event) override;
     void setPanelOpacity(int o);
 
     void init();
@@ -75,9 +75,10 @@ public:
     void loadSettings();
     void addPlugin();
     QRect calculateMenuPosition(QPoint pos, QSize size, int gap = 2, bool isGlobal = true, float hScale = 1, float vScale = 1, QString anchor = "Center");
-    void mousePressEvent(QMouseEvent * event);
+    void mousePressEvent(QMouseEvent * event) override;
     void showDialog(QPoint pos);
 
+    void showEvent(QShowEvent * e) override;
 signals:
 
 

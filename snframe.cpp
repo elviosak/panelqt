@@ -33,9 +33,8 @@ SNFrame::SNFrame(PanelQt * panel)
     changeFrame();
 
     // Watcher stuff
-    static int count = 0;
-    QString dbusName = QString("org.kde.StatusNotifierHost-%1-%2").arg(QCoreApplication::applicationPid()).arg(count++);
-    //QString dbusName = QString("org.kde.StatusNotifierHost-1");
+    QString dbusName = QString("org.kde.StatusNotifierHost-%1-%2").arg(QCoreApplication::applicationPid()).arg(mPanelName);
+
     if (!QDBusConnection::sessionBus().registerService(dbusName))
         qDebug() << QDBusConnection::sessionBus().lastError().message();
 

@@ -170,6 +170,7 @@ void SNButton::resetIcon(){
         setIcon(mAttentionIcon);
     else
         setIcon(mFallbackIcon);
+    update();
 }
 void SNButton::fetchIcon(QString status)
 {
@@ -177,9 +178,10 @@ void SNButton::fetchIcon(QString status)
     QString pixmapProperty = statusToProp[status].Pixmap;
     mInterface->propertyGetAsync(QLatin1String("IconThemePath"), [this, status, nameProperty, pixmapProperty] (QString themePath) {
         mInterface->propertyGetAsync(nameProperty, [this, status, pixmapProperty, themePath] (QString iconName) {
+            QIcon nextIcon;
             if (!iconName.isEmpty())
             {
-                QIcon nextIcon;
+
                 if (QIcon::hasThemeIcon(iconName)){
                     nextIcon = QIcon::fromTheme(iconName);
                 }
@@ -207,16 +209,21 @@ void SNButton::fetchIcon(QString status)
                         }
                     }
                 }
+
+
+            }
+            qDebug() <<"iconName" << iconName << nextIcon.isNull();
+            if(!nextIcon.isNull()){
                 saveIcon(status, nextIcon);
             }
             else
             {
                 mInterface->propertyGetAsync(pixmapProperty, [this, status, pixmapProperty] (IconPixmapList iconPixmaps) {
-                    if (iconPixmaps.empty())
+                    if (iconPixmaps.empty()){
+                        qDebug() << "iconPixmaps empty";
                         return;
-
+                    }
                     QIcon nextIcon;
-
                     for (IconPixmap iconPixmap: iconPixmaps)
                     {
                         if (!iconPixmap.bytes.isNull())
@@ -232,6 +239,7 @@ void SNButton::fetchIcon(QString status)
                             nextIcon.addPixmap(QPixmap::fromImage(image));
                         }
                     }
+                    qDebug() <<"pixmap" << nextIcon.isNull();
                     saveIcon(status, nextIcon);
                 });
             }
@@ -253,11 +261,14 @@ void SNButton::newTitle(){
     });
 }
 void SNButton::newIcon(){
+    qDebug() << "newIcon" << mStatus;
     fetchIcon(mStatus);
 }
 void SNButton::newOverlayIcon(){
+    qDebug() << "newOverlayIcon" << mStatus;
     fetchIcon(mStatus);
 }
 void SNButton::newAttentionIcon(){
+    qDebug() << "newAttentionIcon" << mStatus;
     fetchIcon(mStatus);
 }

@@ -57,8 +57,17 @@ unix: PKGCONFIG += dbusmenu-qt5
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
-else: unix:!android: target.path = /opt/$${TARGET}/bin
-!isEmpty(target.path): INSTALLS += target
+
+desktopfile.files = res/panelqt.desktop
+desktopfile.path = /usr/share/applications/
+iconfile.files = res/panelqt.svg
+iconfile.path = /usr/share/icons/hicolor/scalable/apps/
+
+target.path = /usr/bin
+
+INSTALLS += target desktopfile iconfile
+#else: unix:!android: target.path = /opt/$${TARGET}/bin
+#!isEmpty(target.path): INSTALLS += target
 
 #DISTFILES += \
 #    statusnotifier-extra/org.kde.StatusNotifierItem.xml

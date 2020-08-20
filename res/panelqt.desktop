@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Panel Qt
+StartupWMClass=panelqt
+TryExec=panelqt
+Exec=/usr/bin/panelqt
+Terminal=false
+Icon=panelqt
+Type=Application
+Categories=Utility;
+Name[en_US]=panelqt.desktop
