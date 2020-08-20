@@ -357,7 +357,7 @@ void TaskBar::addGroup(QString className, QIcon icon, bool pinned, QString cmd){
 }
 
 void TaskBar::addWindow(WId id){
-    KWindowInfo info(id, NET::WMName | NET::WMState | NET::WMPid, NET::WM2WindowClass | NET::WM2DesktopFileName | NET::WM2AppMenuServiceName | NET::WM2AppMenuObjectPath);
+    KWindowInfo info(id, NET::WMName | NET::WMState | NET::WMPid, NET::WM2WindowClass | NET::WM2DesktopFileName);
     QIcon icon = KWindowSystem::icon(id);
     QString title = info.name();
     QString className = info.windowClassName();
@@ -517,7 +517,7 @@ void TaskBar::windowChanged(WId id, NET::Properties properties, NET::Properties2
                 windowRemoved(id);
                 return;
             }
-            if(info.state() & NET::Focused)
+            if(info.state() & NET::ActiveWindow)// NET::Focused)
                 group->setActive(id);
         }
         if(properties & NET::WMIcon){

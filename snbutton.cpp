@@ -2,7 +2,7 @@
 #include "snframe.h"
 #include "panelqt.h"
 #include "sn/sniasync.h"
-#include <dbusmenu-qt5/dbusmenuimporter.h>
+//#include <dbusmenu-qt5/dbusmenuimporter.h>
 
 #include <KWindowSystem>
 
@@ -10,17 +10,17 @@
 /*! \brief specialized DBusMenuImporter to correctly create actions' icons based
  * on name
  */
-class MenuImporter : public DBusMenuImporter
-{
-public:
-    using DBusMenuImporter::DBusMenuImporter;
+//class MenuImporter : public DBusMenuImporter
+//{
+//public:
+//    using DBusMenuImporter::DBusMenuImporter;
 
-protected:
-    virtual QIcon iconForName(const QString & name) override
-    {
-        return QIcon::fromTheme(name);
-    }
-};
+//protected:
+//    virtual QIcon iconForName(const QString & name) override
+//    {
+//        return QIcon::fromTheme(name);
+//    }
+//};
 
 SNButton::SNButton(QString service, QString objectPath, SNFrame * frame)
     : QToolButton(frame),
@@ -105,42 +105,42 @@ void SNButton::createMenu(){
 //    });
 }
 void SNButton::showMenu(){
-    mInterface->propertyGetAsync(QLatin1String("Menu"), [=] (QDBusObjectPath path) {
-        if (!path.path().isEmpty())
-        {
-            auto importer = new MenuImporter(mInterface->service(), path.path(), this);
-            connect(importer, &MenuImporter::menuUpdated, this, [=]{
-                QMenu * m = new QMenu(importer->menu()->title());
-                m->addAction(configAction());
-                m->addSeparator();
-                auto objList = importer->menu()->children();
-                QAction * menuAction = importer->menu()->menuAction();
-                for(auto obj : objList){
-                    QAction * a = qobject_cast<QAction*>(obj);
-                    if(nullptr != a && a != menuAction){
-                        m->addAction(a);
-                    }
-                }
+//    mInterface->propertyGetAsync(QLatin1String("Menu"), [=] (QDBusObjectPath path) {
+//        if (!path.path().isEmpty())
+//        {
+//            auto importer = new MenuImporter(mInterface->service(), path.path(), this);
+//            connect(importer, &MenuImporter::menuUpdated, this, [=]{
+//                QMenu * m = new QMenu(importer->menu()->title());
+//                m->addAction(configAction());
+//                m->addSeparator();
+//                auto objList = importer->menu()->children();
+//                QAction * menuAction = importer->menu()->menuAction();
+//                for(auto obj : objList){
+//                    QAction * a = qobject_cast<QAction*>(obj);
+//                    if(nullptr != a && a != menuAction){
+//                        m->addAction(a);
+//                    }
+//                }
 
-                QPoint pos;
-                if(mFrame->mPanel->mPosition == "Top"){
-                    pos = mapFromParent(geometry().bottomLeft());
-                    pos.setY(pos.y() + 4);
-                }else {
-                    pos = mapFromParent(geometry().topLeft());
-                    pos.setY(pos.y() - 4 - m->sizeHint().height());
-                }
+//                QPoint pos;
+//                if(mFrame->mPanel->mPosition == "Top"){
+//                    pos = mapFromParent(geometry().bottomLeft());
+//                    pos.setY(pos.y() + 4);
+//                }else {
+//                    pos = mapFromParent(geometry().topLeft());
+//                    pos.setY(pos.y() - 4 - m->sizeHint().height());
+//                }
 
-                m->popup(mapToGlobal(pos));
+//                m->popup(mapToGlobal(pos));
 
-//                auto center = mapFromParent(geometry().center());
-//                auto menuGeo = mFrame->mPanel->calculateMenuPosition(mapToGlobal(center), m->sizeHint(), 4, true);
-//                m->setGeometry(menuGeo);
-//                m->show();
-            });
-            importer->updateMenu();
-        }
-    });
+////                auto center = mapFromParent(geometry().center());
+////                auto menuGeo = mFrame->mPanel->calculateMenuPosition(mapToGlobal(center), m->sizeHint(), 4, true);
+////                m->setGeometry(menuGeo);
+////                m->show();
+//            });
+//            importer->updateMenu();
+//        }
+//    });
 }
 void SNButton::saveIcon(QString status, QIcon i){
     if (!i.isNull()){
@@ -230,8 +230,11 @@ void SNButton::fetchIcon(QString status)
                         {
                             QImage image((uchar*) iconPixmap.bytes.data(), iconPixmap.width,
                                          iconPixmap.height, QImage::Format_ARGB32);
-
+#if (QT_VERSION >= QT_VERSION_CHECK(5,10,0))
                             const uchar *end = image.constBits() + image.sizeInBytes();
+#else
+                            const uchar *end = image.constBits() + image.byteCount();
+#endif
                             uchar *dest = reinterpret_cast<uchar*>(iconPixmap.bytes.data());
                             for (const uchar *src = image.constBits(); src < end; src += 4, dest += 4)
                                 qToUnaligned(qToBigEndian<quint32>(qFromUnaligned<quint32>(src)), dest);

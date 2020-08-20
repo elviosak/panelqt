@@ -101,7 +101,7 @@ void VolumeButton::launchMixer(){
     QProcess::startDetached(splitCmd.takeFirst(), splitCmd);
 
 #else
-    QProcess::startDetached(exec);
+    QProcess::startDetached(Exec);
 #endif
 }
 void VolumeButton::volumeChanged(int v){
@@ -334,8 +334,11 @@ void VolumeButton::wheelEvent(QWheelEvent *e){
         mSink->setVolume(mSink->volume() - 5);
         mSink->setMute(false);
     }
-
-    QToolTip::showText(e->globalPosition().toPoint(), toolTip());
+#if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
+    QToolTip::showText(e->globalPosistion().toPoint(), toolTip());
+#else
+    QToolTip::showText(e->globalPos(), toolTip());
+#endif
 }
 void VolumeButton::showDialog(){
     auto d = new QDialog(this, Qt::Popup);

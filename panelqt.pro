@@ -51,9 +51,12 @@ HEADERS += \
 
 #LIBS += -lpulse-simple
 LIBS += -lpulse
+unix: LIBS += -ldbusmenu-qt
+#unix: CONFIG += link_pkgconfig
+unix: PKGCONFIG += dbusmenu-qt
 
-unix: CONFIG += link_pkgconfig
-unix: PKGCONFIG += dbusmenu-qt5
+#unix: CONFIG += link_pkgconfig
+#unix: PKGCONFIG += dbusmenu-qt5
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -80,4 +83,4 @@ RESOURCES += \
 
 
 
-unix:!macx: LIBS += -ldbusmenu-qt5
+

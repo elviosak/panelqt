@@ -350,7 +350,7 @@ void AppMenu::launch(Entry e){
     QProcess::startDetached(splitCmd.takeFirst(), splitCmd, e.Path);
 
 #else
-    QProcess::startDetached(exec);
+    QProcess::startDetached(Exec);
 #endif
 }
 void AppMenu::launchCmd(QString cmd){
@@ -360,7 +360,7 @@ void AppMenu::launchCmd(QString cmd){
     QProcess::startDetached(splitCmd.takeFirst(), splitCmd);
 
 #else
-    QProcess::startDetached(exec);
+    QProcess::startDetached(Exec);
 #endif
 }
 QHash<QString, QList<Entry>> AppMenu::categorizeEntries(){
@@ -439,11 +439,19 @@ QList<Entry> AppMenu::findEntries(){
                         entry.Icon = s.value(pre+"Icon", "").toString();
                         entry.StartupWMClass = s.value(pre+"StartupWMClass", "").toString();
                         entry.Terminal = s.value(pre+"Terminal", false).toBool();
+#if (QT_VERSION >= QT_VERSION_CHECK(5,14,0))
                         entry.OnlyShowIn = s.value(pre+"OnlyShowIn", "").toString().split(";", Qt::SkipEmptyParts);
                         entry.Actions = s.value(pre+"Actions", "").toString().split(";", Qt::SkipEmptyParts);
                         QString catString = s.value(pre+"Categories", "").toString();
                         QStringList list = s.value(pre+"Categories", "").toStringList();
                         entry.Categories = catString.split(";", Qt::SkipEmptyParts);
+#else
+                        entry.OnlyShowIn = s.value(pre+"OnlyShowIn", "").toString().split(";");
+                        entry.Actions = s.value(pre+"Actions", "").toString().split(";");
+                        QString catString = s.value(pre+"Categories", "").toString();
+                        QStringList list = s.value(pre+"Categories", "").toStringList();
+                        entry.Categories = catString.split(";");
+#endif
                         entry.ActionEntries = {};
 
                         if(entry.Actions.count() > 0){

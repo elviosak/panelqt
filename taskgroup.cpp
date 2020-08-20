@@ -108,7 +108,7 @@ void TaskGroup::startPin(){
         qDebug()<< "launch" << mCmd << splitCmd;
         QProcess::startDetached(splitCmd.takeFirst(), splitCmd);
 #else
-        QProcess::startDetached(exec);
+        QProcess::startDetached(mCmd);
 #endif
 }
 void TaskGroup::setTitle(WId id, QString title){
