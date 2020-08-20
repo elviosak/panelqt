@@ -335,7 +335,7 @@ void VolumeButton::wheelEvent(QWheelEvent *e){
         mSink->setMute(false);
     }
 #if (QT_VERSION >= QT_VERSION_CHECK(5,12,0))
-    QToolTip::showText(e->globalPosistion().toPoint(), toolTip());
+    QToolTip::showText(e->globalPosition().toPoint(), toolTip());
 #else
     QToolTip::showText(e->globalPos(), toolTip());
 #endif
