@@ -446,11 +446,12 @@ QList<Entry> AppMenu::findEntries(){
                         QStringList list = s.value(pre+"Categories", "").toStringList();
                         entry.Categories = catString.split(";", Qt::SkipEmptyParts);
 #else
-                        entry.OnlyShowIn = s.value(pre+"OnlyShowIn", "").toString().split(";");
-                        entry.Actions = s.value(pre+"Actions", "").toString().split(";");
+                        entry.OnlyShowIn = s.value(pre+"OnlyShowIn", "").toString().split(";", QString::SkipEmptyParts);
+                        entry.Actions = s.value(pre+"Actions", "").toString().split(";", QString::SkipEmptyParts);
                         QString catString = s.value(pre+"Categories", "").toString();
                         QStringList list = s.value(pre+"Categories", "").toStringList();
-                        entry.Categories = catString.split(";");
+                        entry.Categories = catString.split(";", QString::SkipEmptyParts);
+                        qDebug() << "entry" << entry.OnlyShowIn << entry.Actions << entry.Categories;
 #endif
                         entry.ActionEntries = {};
 
